@@ -1,18 +1,17 @@
 import logging
 import tomllib
 from pathlib import Path
-from typing import Dict
 
 logger = logging.getLogger(__name__)
 
-_REQUIRED_KEYS: Dict[str, list] = {
+_REQUIRED_KEYS: dict[str, list] = {
     "chart": ["max_value", "figure_size", "grid_step"],
     "colors": ["top_right", "bottom_right", "top_left", "bottom_left", "alpha"],
     "paths": ["birds_dir", "output"],
 }
 
 
-def load_config(config_path: Path = Path("config.toml")) -> Dict:
+def load_config(config_path: Path = Path("config.toml")) -> dict:
     """Load and validate configuration from TOML file."""
     try:
         with open(config_path, "rb") as f:

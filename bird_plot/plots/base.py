@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Tuple
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -12,7 +11,7 @@ from matplotlib.patches import Rectangle
 logger = logging.getLogger(__name__)
 
 
-def setup_plot(config: dict) -> Tuple[Figure, Axes]:
+def setup_plot(config: dict) -> tuple[Figure, Axes]:
     """Initialize the plot with basic settings.
 
     Args:
@@ -70,7 +69,7 @@ def _add_bird_image(ax, img_path, x, y) -> None:
         logger.warning("Image not found at %s", img_path)
 
 
-def add_bird_images(ax: Axes, config: Dict) -> None:
+def add_bird_images(ax: Axes, config: dict) -> None:
     """Add bird images to the corners of the plot.
 
     Args:
@@ -103,7 +102,7 @@ def add_bird_images(ax: Axes, config: Dict) -> None:
         _add_bird_image(ax, bird_path, x, y)
 
 
-def add_quadrants(ax: Axes, config: Dict) -> None:
+def add_quadrants(ax: Axes, config: dict) -> None:
     """Add colored quadrants to the plot background.
 
     Args:
@@ -141,7 +140,7 @@ def add_quadrants(ax: Axes, config: Dict) -> None:
         ax.add_patch(rect)
 
 
-def add_quadrant_labels(ax: Axes, config: Dict) -> None:
+def add_quadrant_labels(ax: Axes, config: dict) -> None:
     """Add labels to the quadrants."""
     max_value = config["chart"]["max_value"]
     labels = [
@@ -168,7 +167,7 @@ def add_axis_labels(ax: Axes) -> None:
         plt.text(x, y, text, transform=ax.transAxes, rotation=rotation, va="center", ha="center", fontstyle="italic")
 
 
-def add_date(ax: Axes, config: Dict) -> None:
+def add_date(ax: Axes, config: dict) -> None:
     """Add generation date and project link to the plot.
 
     Args:

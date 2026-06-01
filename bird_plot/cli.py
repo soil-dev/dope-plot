@@ -2,7 +2,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -57,7 +56,7 @@ def calculate_team_average(df: pd.DataFrame) -> dict:
     return avg_scores
 
 
-def generate_team_average_radar(df: pd.DataFrame, config: Dict) -> None:
+def generate_team_average_radar(df: pd.DataFrame, config: dict) -> None:
     """Generate a single radar chart showing only the team average."""
     # Get base output directory from config
     output_base = Path(config["paths"]["output"])
@@ -83,7 +82,7 @@ def _sigmoid_scale(series: pd.Series, max_value: float) -> pd.Series:
     return max_value * np.tanh(series / denom)
 
 
-def generate_radar_charts(df: pd.DataFrame, config: Dict) -> None:
+def generate_radar_charts(df: pd.DataFrame, config: dict) -> None:
     """Generate individual and comparison radar charts for all entries."""
 
     # Get base output directory from config
@@ -125,7 +124,7 @@ def generate_radar_charts(df: pd.DataFrame, config: Dict) -> None:
                 radar_chart(person_data, output_filename, config, data2=other_data)
 
 
-def process_personality_data(data_file: str, config: Dict) -> pd.DataFrame:
+def process_personality_data(data_file: str, config: dict) -> pd.DataFrame:
     """Load and process personality data from CSV file."""
     # Load data
     df = load_csv_data(data_file)

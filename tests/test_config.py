@@ -42,8 +42,8 @@ def test_load_config_valid(tmp_path):
 
 
 def test_load_config_missing_file_raises(tmp_path):
-    # Any non-existent path should surface an error (currently OSError, re-raised).
-    with pytest.raises(Exception):
+    # A non-existent path should surface the OSError (re-raised after logging).
+    with pytest.raises(FileNotFoundError):
         load_config(tmp_path / "does_not_exist.toml")
 
 

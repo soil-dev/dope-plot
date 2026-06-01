@@ -65,6 +65,6 @@ def test_scatter_chart_reraises_on_bad_data(base_config, tmp_path):
     """Missing X/Y columns must propagate (current error contract)."""
     out = tmp_path / "bad.png"
     df = pd.DataFrame({"Name": ["NoCoords"], "Note": ["D/O"]})  # no X/Y
-    with pytest.raises(Exception):
+    with pytest.raises(KeyError):
         scatter_chart(df, out, base_config)
     assert not out.exists()

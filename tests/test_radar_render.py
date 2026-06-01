@@ -85,6 +85,6 @@ def test_radar_chart_reraises_on_bad_data(base_config, tmp_path):
     """Missing a required category key must propagate (current error contract)."""
     out = tmp_path / "bad.png"
     bad = {"Name": "X", "Dove": 1, "Owl": 2, "Peacock": 3}  # no "Eagle"
-    with pytest.raises(Exception):
+    with pytest.raises(KeyError):
         radar_chart(bad, out, base_config)
     assert not out.exists()

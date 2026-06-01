@@ -61,10 +61,11 @@ poetry install
 3. **(Optional) Activate the Virtual Environment**
 
 ```bash
-poetry shell
+poetry env activate
 ```
 
-Or you can use poetry run ... without activating the shell.
+(On Poetry 2.x `poetry shell` moved to a plugin; `poetry env activate` prints the
+activation command.) Or you can use `poetry run ...` without activating the shell.
 
 4. **Verify Installation**
 

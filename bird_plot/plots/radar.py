@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 _OVERLAP_RNG_SEED = 0
 
 
-def _to_cartesian(angles: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _to_cartesian(angles: np.ndarray, values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Convert polar (angle, radius) arrays into cartesian (x, y) arrays.
 
     Single source of truth for the polar->cartesian conversion used throughout
@@ -28,7 +27,7 @@ def _to_cartesian(angles: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, n
     return np.cos(angles) * values, np.sin(angles) * values
 
 
-def calculate_angles(categories: List[str], values: List[float]) -> Tuple[np.ndarray, np.ndarray]:
+def calculate_angles(categories: list[str], values: list[float]) -> tuple[np.ndarray, np.ndarray]:
     """Calculate angles and values for the radar plot.
 
     Args:
@@ -102,7 +101,7 @@ def add_labels(
             ax.text(x + perp_x, y + perp_y, str(round(value)), ha="center", va="center")
 
 
-def add_grid(ax: Axes, config: Dict) -> None:
+def add_grid(ax: Axes, config: dict) -> None:
     """Add grid lines to the radar plot for better readability.
 
     Args:
@@ -195,7 +194,7 @@ def plot_with_overlap(
     ax: Axes,
     angles: np.ndarray,
     values1: np.ndarray,
-    values2: Optional[np.ndarray] = None,
+    values2: np.ndarray | None = None,
     color1: str = "blue",
     color2: str = "red",
     alpha: float = 0.3,
@@ -223,7 +222,7 @@ def plot_with_overlap(
         ax.fill(x2, y2, color=color2, alpha=alpha)
 
 
-def _format_title(data: Dict) -> str:
+def _format_title(data: dict) -> str:
     """Format radar chart title with optional note."""
     note = data.get("Note")
     if note and not pd.isna(note):
@@ -231,17 +230,17 @@ def _format_title(data: Dict) -> str:
     return f"{data['Name']}"
 
 
-def radar_chart(data1: Dict, filename: Path, config: Dict, data2: Optional[Dict] = None) -> None:
+def radar_chart(data1: dict, filename: Path, config: dict, data2: dict | None = None) -> None:
     """Create a radar chart for personality data.
 
     Args:
-        data: Dictionary containing personality scores and metadata
+        data1: Dictionary containing personality scores and metadata
         filename: Path where the chart should be saved
-        config_path: Path to the TOML configuration file (defaults to config.toml)
+        config: Loaded configuration dictionary
+        data2: Optional second profile to overlay for a comparison chart
 
     Raises:
-        FileNotFoundError: If config file is not found
-        Exception: For any other errors during chart creation
+        Exception: For any errors during chart creation
     """
     fig = None
     try:

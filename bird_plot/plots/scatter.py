@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -49,13 +48,13 @@ def add_grid(ax: Axes) -> None:
     ax.axvline(0, color="gray", linewidth=0.5, linestyle="--")
 
 
-def scatter_chart(df: pd.DataFrame, filename: Path, config: Dict) -> None:
+def scatter_chart(df: pd.DataFrame, filename: Path, config: dict) -> None:
     """Create a scatter plot of personality distributions.
 
     Args:
-        df: DataFrame containing personality data points
+        df: DataFrame containing personality data points (with X/Y columns)
         filename: Path where the chart should be saved
-        config_path: Path to the TOML configuration file (defaults to config.toml)
+        config: Loaded configuration dictionary
 
     Raises:
         Exception: For any errors during chart creation
