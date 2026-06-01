@@ -17,6 +17,12 @@ venv.bak/
 # Matplotlib configuration
 .matplotlib/
 
+# Test / coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
 # Data files
 *.csv
 
