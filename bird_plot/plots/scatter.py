@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.patches import FancyBboxPatch
@@ -10,36 +11,98 @@ from .base import add_axis_labels, add_bird_images, add_date, add_quadrant_label
 
 logger = logging.getLogger(__name__)
 
+_BOX_HEIGHT = 1.0
+_DOT_OFFSET = _BOX_HEIGHT / 2 + 0.2  # label rests just above its dot
+_CLUSTER_PAD = 0.5  # breathing room kept between boxes
 
-def add_name_boxes(ax: Axes, df: pd.DataFrame) -> None:
-    """Add names in rounded boxes to the plot."""
-    for _, row in df.iterrows():
-        note = row.get("Note", "")
-        note_str = "" if (not note or pd.isna(note)) else str(note)
-        text = f"{row['Name']} {note_str}".strip()
-        text_length = len(text)
-        box_width = max(8, text_length * 0.4)
-        box_height = 1
+
+def _box_text(row) -> str:
+    """Build the '<Name> <Note>' label, tolerating empty/NaN notes."""
+    note = row.get("Note", "")
+    note_str = "" if (not note or pd.isna(note)) else str(note)
+    return f"{row['Name']} {note_str}".strip()
+
+
+def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: int = 400) -> np.ndarray:
+    """Push overlapping label boxes apart, deterministically.
+
+    Each pair that overlaps (axis-aligned, with _CLUSTER_PAD breathing room) is
+    separated along its axis of least penetration. Boxes are wide and short, so
+    this naturally stacks coincident people vertically. Identical positions use
+    an index-based tie-break so the result is reproducible (no randomness).
+    """
+    pos = centers.astype(float).copy()
+    n = len(pos)
+    for _ in range(iters):
+        moved = False
+        for i in range(n):
+            for j in range(i + 1, n):
+                dx, dy = pos[i, 0] - pos[j, 0], pos[i, 1] - pos[j, 1]
+                overlap_x = (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD - abs(dx)
+                overlap_y = (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD - abs(dy)
+                if overlap_x > 0 and overlap_y > 0:
+                    if overlap_y <= overlap_x:
+                        shift = overlap_y / 2
+                        sgn = 1.0 if dy > 0 else (-1.0 if dy < 0 else (1.0 if i < j else -1.0))
+                        pos[i, 1] += sgn * shift
+                        pos[j, 1] -= sgn * shift
+                    else:
+                        shift = overlap_x / 2
+                        sgn = 1.0 if dx > 0 else (-1.0 if dx < 0 else (1.0 if i < j else -1.0))
+                        pos[i, 0] += sgn * shift
+                        pos[j, 0] -= sgn * shift
+                    moved = True
+        if not moved:
+            break
+    # Keep boxes fully inside the canvas.
+    pos[:, 0] = np.clip(pos[:, 0], -max_value + sizes[:, 0] / 2, max_value - sizes[:, 0] / 2)
+    pos[:, 1] = np.clip(pos[:, 1], -max_value + sizes[:, 1] / 2, max_value - sizes[:, 1] / 2)
+    return pos
+
+
+def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
+    """Draw a dot at each true position plus a decluttered name box.
+
+    A small dot marks every person's true (X, Y). Name boxes start just above
+    their dot and are then pushed apart so they never overlap; a leader line
+    connects any box that had to be displaced back to its dot. This keeps people
+    with identical or very similar profiles individually readable.
+    """
+    texts = [_box_text(row) for _, row in df.iterrows()]
+    if not texts:
+        return
+
+    sizes = np.array([[max(8, len(t) * 0.4), _BOX_HEIGHT] for t in texts], dtype=float)
+    anchors = df[["X", "Y"]].to_numpy(dtype=float)
+
+    # Labels rest just above their dot, then get pushed apart.
+    start = anchors.copy()
+    start[:, 1] += _DOT_OFFSET
+    pos = _declutter(start, sizes, max_value)
+
+    for i, text in enumerate(texts):
+        bx, by = pos[i]
+        ax_, ay = anchors[i]
+
+        # Dot at the true position (always visible, drawn above the boxes).
+        ax.scatter([ax_], [ay], s=14, color="steelblue", zorder=4)
+
+        # Leader line only when the box was pushed past its resting offset.
+        if np.hypot(bx - ax_, by - ay) > _DOT_OFFSET + 0.05:
+            ax.plot([bx, ax_], [by, ay], color="gray", linewidth=0.6, zorder=2)
 
         box = FancyBboxPatch(
-            (float(row["X"]) - box_width / 2, float(row["Y"]) - box_height / 2),
-            width=box_width,
-            height=box_height,
+            (bx - sizes[i, 0] / 2, by - sizes[i, 1] / 2),
+            width=sizes[i, 0],
+            height=sizes[i, 1],
             boxstyle="round,pad=0.3",
             edgecolor="lightblue",
             facecolor="lightblue",
             alpha=0.8,
+            zorder=3,
         )
         ax.add_patch(box)
-        ax.text(
-            float(row["X"]),
-            float(row["Y"]),
-            text,
-            fontsize=10,
-            ha="center",
-            va="center",
-            color="black",
-        )
+        ax.text(bx, by, text, fontsize=10, ha="center", va="center", color="black", zorder=5)
 
 
 def add_grid(ax: Axes) -> None:
@@ -73,7 +136,7 @@ def scatter_chart(df: pd.DataFrame, filename: Path, config: dict) -> None:
         add_axis_labels(ax)  # Add X and Y axis labels
 
         # 2. Data visualization elements
-        add_name_boxes(ax, df)  # Add name boxes
+        add_name_boxes(ax, df, config["chart"]["max_value"])  # Add name boxes (decluttered)
 
         # 3. Metadata and title elements
         # Add current date to plot
