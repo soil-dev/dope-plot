@@ -1,5 +1,4 @@
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Tuple
@@ -53,7 +52,7 @@ def _add_bird_image(ax, img_path, x, y) -> None:
     """
 
     # Check if the image file exists at the specified path
-    if os.path.exists(img_path):
+    if Path(img_path).exists():
         # Load the image file using matplotlib
         img = plt.imread(img_path)
 
@@ -146,10 +145,10 @@ def add_quadrant_labels(ax: Axes, config: Dict) -> None:
     """Add labels to the quadrants."""
     max_value = config["chart"]["max_value"]
     labels = [
-        (max_value / 2, max_value * 0.96, "Supportive & Caring"),  # Top-Right
-        (-max_value / 2, -max_value * 0.96, "Controlling & Forceful"),  # Bottom-Right
-        (-max_value / 2, max_value * 0.96, "Talkative & Dramatic"),  # Top-Left
-        (max_value / 2, -max_value * 0.96, "Analytical & Logical"),  # Bottom-Left
+        (max_value / 2, max_value * 0.96, "Supportive & Caring"),  # Top-Right (Dove)
+        (-max_value / 2, -max_value * 0.96, "Controlling & Forceful"),  # Bottom-Left (Eagle)
+        (-max_value / 2, max_value * 0.96, "Talkative & Dramatic"),  # Top-Left (Peacock)
+        (max_value / 2, -max_value * 0.96, "Analytical & Logical"),  # Bottom-Right (Owl)
     ]
 
     for x, y, text in labels:

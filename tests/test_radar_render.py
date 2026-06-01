@@ -11,7 +11,6 @@ from bird_plot.plots.radar import (
     add_grid,
     add_labels,
     calculate_angles,
-    plot,
     plot_with_overlap,
     radar_chart,
 )
@@ -37,12 +36,13 @@ def test_add_grid_adds_circles_and_lines(fig_ax, base_config):
     assert len(lines) >= 2
 
 
-def test_plot_adds_markers_and_fill(fig_ax):
+def test_plot_with_overlap_single_dataset_markers_and_fill(fig_ax):
+    # The individual-chart path calls plot_with_overlap with one dataset.
     _, ax = fig_ax
     angles, vals = calculate_angles(CATS, [10, 15, 8, 12])
     n_lines_before = len(ax.get_lines())
     n_patches_before = len(ax.patches)
-    plot(ax, angles, vals)
+    plot_with_overlap(ax, angles, vals)
     assert len(ax.get_lines()) > n_lines_before  # marker line
     assert len(ax.patches) > n_patches_before  # filled polygon
 

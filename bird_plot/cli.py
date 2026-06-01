@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Dict
@@ -9,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from .config import load_config
+from .constants import CATEGORIES
 from .plots.radar import radar_chart
 from .plots.scatter import scatter_chart
 
@@ -21,27 +21,27 @@ REQUIRED_COLUMNS = {"Name", "Dove", "Owl", "Peacock", "Eagle"}
 
 def load_csv_data(file_path):
     """Load and validate CSV data from the given file path."""
-    if not os.path.exists(file_path):
-        print(f"Error: CSV file '{file_path}' not found!")
+    if not Path(file_path).exists():
+        logger.error("CSV file '%s' not found!", file_path)
         sys.exit(1)
 
     try:
         df = pd.read_csv(file_path)
     except pd.errors.EmptyDataError:
-        print(f"Error: CSV file '{file_path}' is empty.")
+        logger.error("CSV file '%s' is empty.", file_path)
         sys.exit(1)
     except pd.errors.ParserError:
-        print(f"Error: Could not parse CSV file '{file_path}'. Check its format.")
+        logger.error("Could not parse CSV file '%s'. Check its format.", file_path)
         sys.exit(1)
 
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
-        print(f"Error: CSV file '{file_path}' is missing required columns: {', '.join(sorted(missing))}")
+        logger.error("CSV file '%s' is missing required columns: %s", file_path, ", ".join(sorted(missing)))
         sys.exit(1)
 
     negative = {col: True for col in REQUIRED_COLUMNS - {"Name"} if (df[col] < 0).any()}
     if negative:
-        print(f"Error: Negative scores found in columns: {', '.join(sorted(negative))}")
+        logger.error("Negative scores found in columns: %s", ", ".join(sorted(negative)))
         sys.exit(1)
 
     return df
@@ -49,11 +49,10 @@ def load_csv_data(file_path):
 
 def calculate_team_average(df: pd.DataFrame) -> dict:
     """Calculate the team average scores."""
-    categories = ["Owl", "Dove", "Peacock", "Eagle"]
-    avg_scores = {cat: df[cat].mean() for cat in categories}
+    avg_scores = {cat: df[cat].mean() for cat in CATEGORIES}
     avg_scores["Name"] = "Team Average Profile"
     # Show the top two dominant birds (by average score), abbreviated to first letter
-    sorted_cats = sorted(categories, key=lambda c: avg_scores[c], reverse=True)
+    sorted_cats = sorted(CATEGORIES, key=lambda c: avg_scores[c], reverse=True)
     avg_scores["Note"] = "/".join(c[0] for c in sorted_cats[:2])
     return avg_scores
 
@@ -165,7 +164,7 @@ def main() -> None:
         "--graph",
         "-g",
         choices=GRAPH_TYPES,
-        default="scatter",
+        default=["scatter"],
         nargs="+",
         help="Type of graph to generate (radar or scatter).",
     )
