@@ -71,3 +71,13 @@ def test_calculate_overlap_zero_polygon() -> None:
     overlap = calculate_overlap(vals1, vals2, angles)
     # A zero-area polygon has no intersection
     assert overlap == pytest.approx(0.0, abs=1.0)
+
+
+def test_calculate_overlap_is_deterministic() -> None:
+    # Seeded Monte Carlo: same inputs must yield the same overlap every call.
+    categories = ["Owl", "Dove", "Peacock", "Eagle"]
+    angles, v1 = calculate_angles(categories, [10.0, 5.0, 8.0, 3.0])
+    _, v2 = calculate_angles(categories, [3.0, 8.0, 5.0, 10.0])
+    first = calculate_overlap(v1, v2, angles)
+    repeats = [calculate_overlap(v1, v2, angles) for _ in range(4)]
+    assert all(r == first for r in repeats)

@@ -1,12 +1,12 @@
 """Refactor guardrail: render a representative set of charts and hash their PIXELS.
 
-Nondeterminism is frozen identically on every run so the ONLY thing that can
-change a hash is a code change to the rendering path:
-  - base.add_date uses datetime.now()  -> frozen to a fixed date
-  - radar.calculate_overlap uses default_rng() (unseeded) -> seeded
+The only runtime nondeterminism is the generation date (base.add_date uses
+datetime.now()), which is frozen here to a fixed value. The Monte Carlo overlap
+estimate is seeded in the production code itself, so it is already reproducible.
+That means the ONLY thing that can change a hash is a code change to rendering.
 
 Compares pixel arrays (not file bytes), so PNG metadata is ignored.
-Run before and after a refactor; identical hashes == graphs unchanged.
+Run before and after a change; identical hashes == graphs unchanged.
 """
 
 import hashlib
@@ -67,11 +67,7 @@ def main() -> None:
             "Note": ["D/O", "O/D", "E/P"],
         }
     )
-    _real_default_rng = np.random.default_rng  # capture before patching
-    seeded = lambda *a, **k: _real_default_rng(424242)  # noqa: E731
-
-    with mock.patch.object(base_mod, "datetime", _FrozenDateTime), \
-         mock.patch.object(np.random, "default_rng", seeded):
+    with mock.patch.object(base_mod, "datetime", _FrozenDateTime):
         with tempfile.TemporaryDirectory() as d:
             cfg = {**CONFIG, "paths": {**CONFIG["paths"], "output": d}}
             csv = Path(d) / "_src.csv"

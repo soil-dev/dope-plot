@@ -14,6 +14,10 @@ from .base import add_axis_labels, add_bird_images, add_date, add_quadrant_label
 
 logger = logging.getLogger(__name__)
 
+# Fixed seed for the Monte Carlo overlap estimate so the reported percentage is
+# reproducible: the same pair of profiles always yields the same overlap value.
+_OVERLAP_RNG_SEED = 0
+
 
 def _to_cartesian(angles: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Convert polar (angle, radius) arrays into cartesian (x, y) arrays.
@@ -170,8 +174,8 @@ def calculate_overlap(values1: np.ndarray, values2: np.ndarray, angles: np.ndarr
     n_samples = 10000
     bbox = [min(x1.min(), x2.min()), max(x1.max(), x2.max()), min(y1.min(), y2.min()), max(y1.max(), y2.max())]
 
-    # Generate random sample points within the bounding box
-    rng = np.random.default_rng()
+    # Generate random sample points within the bounding box (seeded for reproducibility)
+    rng = np.random.default_rng(_OVERLAP_RNG_SEED)
     x = rng.uniform(bbox[0], bbox[1], n_samples)
     y = rng.uniform(bbox[2], bbox[3], n_samples)
     sample_points = np.column_stack((x, y))
