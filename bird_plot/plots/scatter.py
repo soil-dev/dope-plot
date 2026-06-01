@@ -107,10 +107,11 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
         bx, by = pos[i]
         ax_, ay = anchors[i]
 
-        # Only a box that had to move shows its true-position dot + leader line.
+        # Only a box that had to move shows its true-position dot + leader line,
+        # both in the person's bird colour so the connector belongs to the chip.
         if np.hypot(bx - ax_, by - ay) > _DISPLACE_EPS:
-            ax.scatter([ax_], [ay], s=10, color="black", zorder=4)
-            ax.plot([bx, ax_], [by, ay], color="gray", linewidth=0.7, zorder=2)
+            ax.plot([bx, ax_], [by, ay], color=border_colors[i], linewidth=0.9, zorder=2)
+            ax.scatter([ax_], [ay], s=11, color=border_colors[i], zorder=4)
 
         box = FancyBboxPatch(
             (bx - sizes[i, 0] / 2, by - sizes[i, 1] / 2),
