@@ -7,7 +7,7 @@ import pytest
 from matplotlib.patches import FancyBboxPatch
 
 from bird_plot.plots.base import setup_plot
-from bird_plot.plots.scatter import _declutter, add_grid, add_name_boxes, scatter_chart
+from bird_plot.plots.scatter import _border_color, _declutter, add_grid, add_name_boxes, scatter_chart
 
 MV = 25
 
@@ -95,6 +95,25 @@ def test_declutter_leaves_distant_points_untouched():
     sizes = np.array([[8.0, 1.0], [8.0, 1.0]])
     out = _declutter(centers, sizes, MV)
     assert np.allclose(out, centers)
+
+
+# --- border colour ---
+
+
+def test_border_color_from_note_primary_letter():
+    assert _border_color(pd.Series({"Name": "X", "Note": "D/O"})) == "royalblue"
+    assert _border_color(pd.Series({"Name": "X", "Note": "E/P"})) == "crimson"
+    assert _border_color(pd.Series({"Name": "X", "Note": "O/D"})) == "goldenrod"
+    assert _border_color(pd.Series({"Name": "X", "Note": "P/D"})) == "seagreen"
+
+
+def test_border_color_falls_back_to_dominant_score():
+    row = pd.Series({"Name": "X", "Note": np.nan, "Dove": 1, "Eagle": 2, "Owl": 9, "Peacock": 3})
+    assert _border_color(row) == "goldenrod"  # Owl highest
+
+
+def test_border_color_neutral_when_unknown():
+    assert _border_color(pd.Series({"Name": "X", "Note": ""})) == "0.4"
 
 
 def test_scatter_chart_writes_png(base_config, tmp_path):

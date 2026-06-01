@@ -15,12 +15,35 @@ _BOX_HEIGHT = 1.0
 _DOT_OFFSET = _BOX_HEIGHT / 2 + 0.2  # label rests just above its dot
 _CLUSTER_PAD = 0.5  # breathing room kept between boxes
 
+# Box border colour keyed to a person's dominant bird, so the label reads on any
+# quadrant background (white fill) while the border still carries meaning.
+_BIRD_BORDER = {"D": "royalblue", "E": "crimson", "O": "goldenrod", "P": "seagreen"}
+_NEUTRAL_BORDER = "0.4"
+
 
 def _box_text(row) -> str:
     """Build the '<Name> <Note>' label, tolerating empty/NaN notes."""
     note = row.get("Note", "")
     note_str = "" if (not note or pd.isna(note)) else str(note)
     return f"{row['Name']} {note_str}".strip()
+
+
+def _border_color(row) -> str:
+    """Pick a border colour from the dominant bird.
+
+    Prefers the primary letter of the Note (what the label shows); falls back to
+    the highest raw score, then to a neutral grey when nothing is available.
+    """
+    note = row.get("Note", "")
+    if note and not pd.isna(note):
+        color = _BIRD_BORDER.get(str(note)[:1].upper())
+        if color:
+            return color
+    scores = {b: row.get(b) for b in ("Dove", "Eagle", "Owl", "Peacock")}
+    scores = {b: v for b, v in scores.items() if v is not None and not pd.isna(v)}
+    if scores:
+        return _BIRD_BORDER[max(scores, key=scores.get)[0]]
+    return _NEUTRAL_BORDER
 
 
 def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: int = 400) -> np.ndarray:
@@ -71,6 +94,7 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     texts = [_box_text(row) for _, row in df.iterrows()]
     if not texts:
         return
+    border_colors = [_border_color(row) for _, row in df.iterrows()]
 
     sizes = np.array([[max(8, len(t) * 0.4), _BOX_HEIGHT] for t in texts], dtype=float)
     anchors = df[["X", "Y"]].to_numpy(dtype=float)
@@ -96,9 +120,10 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
             width=sizes[i, 0],
             height=sizes[i, 1],
             boxstyle="round,pad=0.3",
-            edgecolor="lightblue",
-            facecolor="lightblue",
-            alpha=0.8,
+            edgecolor=border_colors[i],
+            facecolor="white",
+            linewidth=1.6,
+            alpha=0.95,
             zorder=3,
         )
         ax.add_patch(box)
