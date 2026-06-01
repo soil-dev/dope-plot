@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Patch
 from matplotlib.path import Path as MplPath
 
 from ..constants import CATEGORIES
@@ -275,10 +275,13 @@ def radar_chart(data1: Dict, filename: Path, config: Dict, data2: Optional[Dict]
             overlap = calculate_overlap(values1_array, values2_array, angles)
             ax.text(0, -config["chart"]["max_value"] - 3, f"Overlap: {overlap:.1f}%", ha="center", va="center")
 
-            # Add legend
-            ax.plot([], [], color="blue", label=f"{data1['Name']}", alpha=0.3)
-            ax.plot([], [], color="red", label=f"{data2['Name']}", alpha=0.3)
+            # Add legend with filled swatches that match the plotted polygons
+            legend_handles = [
+                Patch(facecolor="blue", alpha=0.3, label=f"{data1['Name']}"),
+                Patch(facecolor="red", alpha=0.3, label=f"{data2['Name']}"),
+            ]
             ax.legend(
+                handles=legend_handles,
                 title="Legend",
                 loc="upper center",
                 edgecolor="black",
