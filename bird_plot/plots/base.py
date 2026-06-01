@@ -167,36 +167,56 @@ def add_axis_labels(ax: Axes) -> None:
         plt.text(x, y, text, transform=ax.transAxes, rotation=rotation, va="center", ha="center", fontstyle="italic")
 
 
-def add_date(ax: Axes, config: dict) -> None:
-    """Add generation date and project link to the plot.
-
-    Args:
-        ax: The matplotlib axes object to draw on
-        config: Dictionary containing configuration including:
-            - 'chart.show_project_link': whether to show project link
-    """
-    # Format current date as YYYY-MM-DD
-    date_string = datetime.now().strftime("%Y-%m-%d")
-    y_pos = -0.1
-    link_fontsize = 5
-    date_fontsize = 10
-    if config.get("chart", {}).get("show_project_link", True):
-        # Add project link centered under the plot
-        ax.text(
-            0.5,
-            y_pos,
-            "https://github.com/arapov/bird-plot",
-            transform=ax.transAxes,
-            ha="center",
-            fontsize=link_fontsize,
-            color="black",
-        )
-    # Add date text to the plot
-    ax.text(
-        1,  # X position: right edge
-        y_pos,  # Y position: 10% below bottom of axes
-        f"Generated: {date_string}",
-        transform=ax.transAxes,  # Use axes coordinates (0-1 range)
-        ha="right",
-        fontsize=date_fontsize,
+def _bird_box_axes_extent(ax: Axes, x_data: float, y_data: float):
+    """Axes-fraction (left, right, bottom, top) of the corner bird box anchored
+    at the given data point, or None if it can't be located/measured."""
+    box = next(
+        (
+            a
+            for a in ax.get_children()
+            if isinstance(a, AnnotationBbox) and abs(a.xy[0] - x_data) < 1e-6 and abs(a.xy[1] - y_data) < 1e-6
+        ),
+        None,
     )
+    if box is None:
+        return None
+    try:
+        ext = box.get_window_extent(ax.figure.canvas.get_renderer())
+        inv = ax.transAxes.inverted()
+        left, bottom = inv.transform((ext.x0, ext.y0))
+        right, top = inv.transform((ext.x1, ext.y1))
+        return left, right, bottom, top
+    except Exception:
+        return None
+
+
+def add_date(ax: Axes, config: dict) -> None:
+    """Add the generation date (and optional project link) as subtle footnotes.
+
+    The date sits just left of the bottom-right (owl) box; the project link, if
+    enabled via ``chart.show_project_link``, sits just right of the bottom-left
+    (eagle) box. Both are small, grey, and bottom-aligned to their box.
+    """
+    date_string = datetime.now().strftime("%Y-%m-%d")
+    fontsize = 7
+    max_value = config["chart"]["max_value"]
+
+    # Date: just left of the owl (bottom-right) box, aligned to its bottom edge.
+    owl = _bird_box_axes_extent(ax, max_value, -max_value)
+    if owl is not None:
+        x, y, ha, va = owl[0] - 0.015, owl[2], "right", "bottom"
+    else:
+        x, y, ha, va = 1.0, -0.1, "right", "top"
+    ax.text(x, y, f"Generated: {date_string}", transform=ax.transAxes, ha=ha, va=va, fontsize=fontsize, color="0.5")
+
+    # Project link (optional): mirror of the date, right of the eagle (bottom-left) box.
+    if config.get("chart", {}).get("show_project_link", True):
+        eagle = _bird_box_axes_extent(ax, -max_value, -max_value)
+        if eagle is not None:
+            lx, ly, lha, lva = eagle[1] + 0.015, eagle[2], "left", "bottom"
+        else:
+            lx, ly, lha, lva = 0.0, -0.1, "left", "top"
+        ax.text(
+            lx, ly, "github.com/arapov/bird-plot",
+            transform=ax.transAxes, ha=lha, va=lva, fontsize=fontsize, color="0.5",
+        )

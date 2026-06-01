@@ -102,6 +102,18 @@ def test_add_date_defaults_to_showing_link_when_key_missing(fig_ax, base_config)
     assert len(ax.texts) - before == 2
 
 
+def test_add_date_positions_beside_bird_boxes(fig_ax, base_config):
+    # With the bird boxes present and the link enabled, the date is placed by the
+    # owl box and the link by the eagle box (the box-found branches).
+    _, ax = fig_ax
+    base_config["chart"]["show_project_link"] = True
+    add_bird_images(ax, base_config)
+    add_date(ax, base_config)
+    texts = " ".join(t.get_text() for t in ax.texts)
+    assert "Generated:" in texts
+    assert "github.com/arapov/bird-plot" in texts
+
+
 def _count_annotation_boxes(ax):
     return sum(isinstance(c, AnnotationBbox) for c in ax.get_children())
 
