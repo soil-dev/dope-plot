@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bird_plot.cli import (
+from dope_plot.cli import (
     REQUIRED_COLUMNS,
     _safe_name_for_path,
     _sigmoid_scale,

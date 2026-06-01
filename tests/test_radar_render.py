@@ -1,4 +1,4 @@
-"""Characterization + smoke tests for bird_plot.plots.radar rendering paths."""
+"""Characterization + smoke tests for dope_plot.plots.radar rendering paths."""
 
 
 import matplotlib.pyplot as plt
@@ -6,8 +6,8 @@ import pytest
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
 
-from bird_plot.plots.base import setup_plot
-from bird_plot.plots.radar import (
+from dope_plot.plots.base import setup_plot
+from dope_plot.plots.radar import (
     add_grid,
     add_labels,
     calculate_angles,

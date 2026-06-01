@@ -24,9 +24,9 @@ import matplotlib.image as mpimg
 import numpy as np
 import pandas as pd
 
-import bird_plot.plots.base as base_mod
-from bird_plot.cli import generate_radar_charts, generate_team_average_radar, process_personality_data
-from bird_plot.plots.scatter import scatter_chart
+import dope_plot.plots.base as base_mod
+from dope_plot.cli import generate_radar_charts, generate_team_average_radar, process_personality_data
+from dope_plot.plots.scatter import scatter_chart
 
 REPO = Path(__file__).resolve().parent
 CONFIG = {

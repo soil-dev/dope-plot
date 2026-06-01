@@ -1,4 +1,4 @@
-"""Characterization tests for bird_plot.plots.base (headless Agg rendering).
+"""Characterization tests for dope_plot.plots.base (headless Agg rendering).
 
 These pin the *structure* the helpers add to an Axes (limits, counts of
 patches/texts/images) so refactors that change the visual scaffolding are caught.
@@ -12,7 +12,7 @@ import pytest
 from matplotlib.offsetbox import AnnotationBbox
 from matplotlib.patches import Rectangle
 
-from bird_plot.plots.base import (
+from dope_plot.plots.base import (
     _add_bird_image,
     add_axis_labels,
     add_bird_images,
@@ -90,7 +90,7 @@ def test_add_date_with_project_link(fig_ax, base_config):
     add_date(ax, base_config)
     # Project link + generated date == 2 texts.
     assert len(ax.texts) - before == 2
-    assert any("github.com/arapov/bird-plot" in t.get_text() for t in ax.texts)
+    assert any("github.com/arapov/dope-plot" in t.get_text() for t in ax.texts)
 
 
 def test_add_date_defaults_to_showing_link_when_key_missing(fig_ax, base_config):
@@ -111,7 +111,7 @@ def test_add_date_positions_beside_bird_boxes(fig_ax, base_config):
     add_date(ax, base_config)
     texts = " ".join(t.get_text() for t in ax.texts)
     assert "Generated:" in texts
-    assert "github.com/arapov/bird-plot" in texts
+    assert "github.com/arapov/dope-plot" in texts
 
 
 def _count_annotation_boxes(ax):
@@ -130,7 +130,7 @@ def test_add_bird_image_missing_logs_warning(fig_ax, caplog):
 def test_add_bird_image_present_adds_artist(fig_ax):
     _, ax = fig_ax
     before = _count_annotation_boxes(ax)
-    _add_bird_image(ax, REPO_ROOT / "birds" / "dove.png", 0, 0)
+    _add_bird_image(ax, REPO_ROOT / "birds" / "hunt-dove.png", 0, 0)
     assert _count_annotation_boxes(ax) == before + 1
 
 

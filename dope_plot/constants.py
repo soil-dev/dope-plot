@@ -1,4 +1,4 @@
-"""Shared constants for bird-plot.
+"""Shared constants for dope-plot.
 
 CATEGORIES is the canonical bird ordering. The order is significant: it both
 assigns the radar-plot angles (Owl -> Dove -> Peacock -> Eagle, clockwise) and

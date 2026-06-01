@@ -152,7 +152,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     config = load_config()
 
-    parser = argparse.ArgumentParser(description="Generate bird plot charts.")
+    parser = argparse.ArgumentParser(description="Generate dope-plot personality charts.")
     parser.add_argument(
         "--data",
         "-d",

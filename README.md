@@ -1,6 +1,6 @@
-# Bird-Plot
+# Dope-Plot
 
-**Bird-Plot** is a Python-based visualization tool for generating quadrant-style plots of [tick.com.au](https://tick.com.au)’s four-bird personality styles (Eagle, Dove, Owl, and Peacock). It takes as input a data file (e.g., CSV) of individual or group personality scores and produces informative charts that help users quickly see:
+**Dope-Plot** is a Python-based visualization tool for generating quadrant-style plots of [tick.com.au](https://tick.com.au)’s four-bird personality styles (Eagle, Dove, Owl, and Peacock). It takes as input a data file (e.g., CSV) of individual or group personality scores and produces informative charts that help users quickly see:
 
 - **Individual** personality radar plots
 - **Team** or **group** distributions in a quadrant layout
@@ -8,7 +8,7 @@
 
 These plots are especially useful for workshops, coaching sessions, and team-building exercises, as they visualize how individuals align or differ on the four “bird” dimensions.
 
-[The Tick personality profiling system](https://tick.com.au) has been appreciated by many in the fields of sales training, leadership coaching, and personal development for its simplicity and ease of communication. Bird-Plot leverages this established framework to provide clear, accessible visualizations that help users understand and compare personality traits quickly. While the tool provides valuable insights and serves as a catalyst for discussion and reflection, users are encouraged to complement these insights with additional information and professional judgment.
+[The Tick personality profiling system](https://tick.com.au) has been appreciated by many in the fields of sales training, leadership coaching, and personal development for its simplicity and ease of communication. Dope-Plot leverages this established framework to provide clear, accessible visualizations that help users understand and compare personality traits quickly. While the tool provides valuable insights and serves as a catalyst for discussion and reflection, users are encouraged to complement these insights with additional information and professional judgment.
 
 ---
 
@@ -47,8 +47,8 @@ These plots are especially useful for workshops, coaching sessions, and team-bui
 1. **Clone or Download the Repository**
 
 ```bash
-git clone https://github.com/arapov/bird-plot.git
-cd bird-plot
+git clone https://github.com/arapov/dope-plot.git
+cd dope-plot
 ```
 
 2. **Install Dependencies with Poetry**
@@ -71,7 +71,7 @@ activation command.) Or you can use `poetry run ...` without activating the shel
 4. **Verify Installation**
 
 ```bash
-poetry run bird-plot --help
+poetry run dope-plot --help
 ```
 
 This should display a help message with usage instructions.
@@ -81,10 +81,10 @@ This should display a help message with usage instructions.
 1. **Prepare Your Data**
    Ensure you have a CSV or similar data file that includes each person’s scores. (See [Input Data Format](#input-data-format) below.)
 
-2. **Run Bird-Plot**
+2. **Run Dope-Plot**
 
 ```bash
-poetry run bird-plot --data data.csv --graph radar scatter
+poetry run dope-plot --data data.csv --graph radar scatter
 ```
 
 - --data Path to the CSV data file (default: data.csv)
@@ -94,7 +94,7 @@ poetry run bird-plot --data data.csv --graph radar scatter
 
 The script will create .png files in the charts folder.
 
-_Note: Run `poetry run bird-plot --help` for detailed usage._
+_Note: Run `poetry run dope-plot --help` for detailed usage._
 
 ## Input Data Format
 
@@ -123,21 +123,21 @@ poetry run pytest
 - Plots one person’s scores around four axes (Eagle, Dove, Owl, Peacock).
 - The polygon edges connect each axis’s numeric value, visually representing personality strengths.
 
-<img src="https://media.githubusercontent.com/media/arapov/bird-plot/refs/heads/master/charts/Grace/radar_Grace.png" width="555">
+<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/Grace/radar_Grace.png" width="555">
 
 2. **Group/Team Distribution - Scatter Plot**
 
 - Displays multiple names on a quadrant chart.
 - Each quadrant corresponds to a “bird” style, with positions indicating how strongly each person aligns to one or more dimensions.
 
-<img src="https://media.githubusercontent.com/media/arapov/bird-plot/refs/heads/master/charts/scatter_all.png" width="555">
+<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/scatter_all.png" width="555">
 
 3. **Comparison/Overlap Plot**
 
 - Overlays two radar plots for a side-by-side comparison.
 - Shows an “Overlap” percentage as a measure of similarity.
 
-<img src="https://media.githubusercontent.com/media/arapov/bird-plot/refs/heads/master/charts/Grace/compare/with_Henry.png" width="555">
+<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/Grace/compare/with_Henry.png" width="555">
 
 _(Note: The above images are illustrative examples.)_
 

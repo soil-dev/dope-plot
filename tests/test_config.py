@@ -1,10 +1,10 @@
-"""Characterization tests for bird_plot.config.load_config."""
+"""Characterization tests for dope_plot.config.load_config."""
 
 from pathlib import Path
 
 import pytest
 
-from bird_plot.config import load_config
+from dope_plot.config import load_config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

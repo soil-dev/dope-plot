@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from bird_plot.plots.radar import _format_title, calculate_angles, calculate_overlap
+from dope_plot.plots.radar import _format_title, calculate_angles, calculate_overlap
 
 
 def test_format_title_without_note() -> None:

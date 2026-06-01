@@ -28,7 +28,7 @@ exaggerates a person's dominant trait so it reads clearly on the chart.
 
 The raw X/Y are then squashed with `tanh`, normalized by the **largest absolute
 value present in the current dataset** (see `_sigmoid_scale` in
-[`bird_plot/cli.py`](../bird_plot/cli.py)):
+[`dope_plot/cli.py`](../dope_plot/cli.py)):
 
 ```python
 position = max_value * tanh(raw / max_abs_raw_in_this_csv)
@@ -60,7 +60,7 @@ line even though their own scores never changed.*
 
 ### Why this is the right call here
 
-bird-plot visualizes **one team / workshop at a time**. The goal is to see how
+dope-plot visualizes **one team / workshop at a time**. The goal is to see how
 that group spreads out relative to each other — not to compare absolute
 coordinates across separate sessions. Within-cohort readability wins, so the
 adaptive denominator is kept.

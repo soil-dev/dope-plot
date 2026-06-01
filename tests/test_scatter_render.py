@@ -1,12 +1,12 @@
-"""Characterization + smoke tests for bird_plot.plots.scatter."""
+"""Characterization + smoke tests for dope_plot.plots.scatter."""
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 
-from bird_plot.plots.base import setup_plot
-from bird_plot.plots.scatter import _BOX_GAP, _BOX_PAD, _clusters, _declutter, add_grid, add_name_boxes, scatter_chart
+from dope_plot.plots.base import setup_plot
+from dope_plot.plots.scatter import _BOX_GAP, _BOX_PAD, _clusters, _declutter, add_grid, add_name_boxes, scatter_chart
 
 MV = 25
 

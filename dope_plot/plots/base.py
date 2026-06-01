@@ -97,7 +97,7 @@ def add_bird_images(ax: Axes, config: dict) -> None:
     # Add each bird image to its respective corner
     for bird, x, y in birds:
         # Construct full path to bird image file
-        bird_path = birds_dir / f"{bird}.png"
+        bird_path = birds_dir / f"hunt-{bird}.png"
         # Add the bird image to the plot
         _add_bird_image(ax, bird_path, x, y)
 
@@ -217,6 +217,6 @@ def add_date(ax: Axes, config: dict) -> None:
         else:
             lx, ly, lha, lva = 0.0, -0.1, "left", "top"
         ax.text(
-            lx, ly, "github.com/arapov/bird-plot",
+            lx, ly, "github.com/arapov/dope-plot",
             transform=ax.transAxes, ha=lha, va=lva, fontsize=fontsize, color="0.5",
         )

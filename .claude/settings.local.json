@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(poetry run *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(rm -f /tmp/bird_baseline.txt && echo \"=== RUN 1 \\(writes baseline\\) ===\" && poetry run python pixel_guard.py /tmp/bird_baseline.txt 2>&1 | tail -6 && echo \"\" && echo \"=== RUN 2 \\(determinism check\\) ===\" && poetry run python pixel_guard.py /tmp/bird_baseline.txt 2>&1 | tail -2)",
+      "Bash(git --no-pager diff --stat)",
+      "Bash(git checkout *)",
+      "Bash(git --no-pager diff --cached --stat)",
+      "Bash(grep -q \"^.env$\")",
+      "Bash(git rm *)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(git check-attr *)",
+      "Bash(git push *)",
+      "Bash(git mv *)"
+    ]
+  }
+}

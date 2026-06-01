@@ -1,4 +1,4 @@
-"""Integration + golden-value tests for bird_plot.cli.
+"""Integration + golden-value tests for dope_plot.cli.
 
 The golden X/Y test pins the ENTIRE transform pipeline (max-bird 1.2x boost,
 integer truncation, tanh scaling, per-column-max denominator). If any of those
@@ -10,8 +10,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import bird_plot.cli as cli
-from bird_plot.cli import (
+import dope_plot.cli as cli
+from dope_plot.cli import (
     generate_radar_charts,
     generate_team_average_radar,
     load_csv_data,
@@ -107,7 +107,7 @@ def test_generate_team_average_radar(sample_csv):
 def _run_main(monkeypatch, sample_csv, out_dir, graph_args):
     cfg = {**MINIMAL_CONFIG, "paths": {**MINIMAL_CONFIG["paths"], "output": str(out_dir)}}
     monkeypatch.setattr(cli, "load_config", lambda *a, **k: cfg)
-    argv = ["bird-plot", "--data", sample_csv] + graph_args
+    argv = ["dope-plot", "--data", sample_csv] + graph_args
     monkeypatch.setattr("sys.argv", argv)
     main()
 
