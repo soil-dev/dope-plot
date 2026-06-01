@@ -20,6 +20,7 @@ These plots are especially useful for workshops, coaching sessions, and team-bui
 4. [Input Data Format](#input-data-format)
 5. [Testing](#testing)
 6. [Example Outputs](#example-outputs)
+7. [Design Notes](#design-notes)
 
 ---
 
@@ -139,6 +140,13 @@ poetry run pytest
 <img src="https://media.githubusercontent.com/media/arapov/bird-plot/refs/heads/master/charts/Grace/compare/with_Henry.png" width="555">
 
 _(Note: The above images are illustrative examples.)_
+
+## Design Notes
+
+The scatter plot scales each cohort to fill the quadrants so that name boxes
+spread out instead of colliding. This is a deliberate trade-off (positions are
+relative to the loaded group, not absolute). See
+[docs/DESIGN.md](docs/DESIGN.md) for the rationale and before/after examples.
 
 ## License
 
