@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -13,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 _BOX_HEIGHT = 1.0
 _CLUSTER_PAD = 0.5  # breathing room kept between boxes
-_DISPLACE_EPS = 0.05  # a box is "moved" (and gets a dot + leader line) past this
 
 # Box border colour keyed to a person's dominant bird, so the label reads on any
 # quadrant background (white fill) while the border still carries meaning.
@@ -83,6 +83,35 @@ def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: 
     return pos
 
 
+def _clusters(anchors: np.ndarray, sizes: np.ndarray) -> list:
+    """Group people whose boxes overlap at their true points (connected components).
+
+    Returns a list of index lists; a list of length 1 is an isolated person.
+    """
+    n = len(anchors)
+    parent = list(range(n))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            dx = abs(anchors[i, 0] - anchors[j, 0])
+            dy = abs(anchors[i, 1] - anchors[j, 1])
+            near_x = dx < (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD
+            near_y = dy < (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD
+            if near_x and near_y:
+                parent[find(i)] = find(j)
+
+    groups = {}
+    for i in range(n):
+        groups.setdefault(find(i), []).append(i)
+    return list(groups.values())
+
+
 def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     """Draw name boxes, decluttering only where they would overlap.
 
@@ -100,18 +129,23 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     sizes = np.array([[max(8, len(t) * 0.4), _BOX_HEIGHT] for t in texts], dtype=float)
     anchors = df[["X", "Y"]].to_numpy(dtype=float)
 
-    # Boxes start on their true point; only overlapping ones get pushed apart.
+    # Boxes start on their true point; overlapping ones get pushed apart.
     pos = _declutter(anchors.copy(), sizes, max_value)
+
+    # One marker per overlapping cluster: a single dot at the group's location
+    # with one leader line to the stack. Coincident people share a point, so a
+    # per-person dot would be ambiguous; the stacked chips list who is there.
+    for group in _clusters(anchors, sizes):
+        if len(group) < 2:
+            continue
+        anchor_mid = anchors[group].mean(axis=0)
+        box_mid = pos[group].mean(axis=0)
+        color = Counter(border_colors[i] for i in group).most_common(1)[0][0]
+        ax.plot([box_mid[0], anchor_mid[0]], [box_mid[1], anchor_mid[1]], color=color, linewidth=0.9, zorder=2)
+        ax.scatter([anchor_mid[0]], [anchor_mid[1]], s=16, color=color, zorder=4)
 
     for i, text in enumerate(texts):
         bx, by = pos[i]
-        ax_, ay = anchors[i]
-
-        # Only a box that had to move shows its true-position dot + leader line,
-        # both in the person's bird colour so the connector belongs to the chip.
-        if np.hypot(bx - ax_, by - ay) > _DISPLACE_EPS:
-            ax.plot([bx, ax_], [by, ay], color=border_colors[i], linewidth=0.9, zorder=2)
-            ax.scatter([ax_], [ay], s=11, color=border_colors[i], zorder=4)
 
         box = FancyBboxPatch(
             (bx - sizes[i, 0] / 2, by - sizes[i, 1] / 2),

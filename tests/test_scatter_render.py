@@ -7,7 +7,7 @@ import pytest
 from matplotlib.patches import FancyBboxPatch
 
 from bird_plot.plots.base import setup_plot
-from bird_plot.plots.scatter import _border_color, _declutter, add_grid, add_name_boxes, scatter_chart
+from bird_plot.plots.scatter import _border_color, _clusters, _declutter, add_grid, add_name_boxes, scatter_chart
 
 MV = 25
 
@@ -58,13 +58,15 @@ def test_add_name_boxes_no_dot_without_collision(fig_ax):
     assert len(ax.collections) == before
 
 
-def test_add_name_boxes_dots_on_collision(fig_ax):
+def test_add_name_boxes_one_dot_per_cluster(fig_ax):
     _, ax = fig_ax
-    df = pd.DataFrame({"Name": ["A", "B"], "Note": ["D/O", "D/O"], "X": [5.0, 5.0], "Y": [5.0, 5.0]})
+    # Three coincident people form ONE cluster -> a single dot, not three.
+    df = pd.DataFrame(
+        {"Name": ["A", "B", "C"], "Note": ["D/O", "D/O", "D/O"], "X": [5.0, 5.0, 5.0], "Y": [5.0, 5.0, 5.0]}
+    )
     before = len(ax.collections)
     add_name_boxes(ax, df, MV)
-    # Two coincident boxes both get displaced -> a dot each.
-    assert len(ax.collections) - before == 2
+    assert len(ax.collections) - before == 1
 
 
 def test_add_name_boxes_handles_nan_note(fig_ax):
@@ -104,6 +106,16 @@ def test_declutter_leaves_distant_points_untouched():
     sizes = np.array([[8.0, 1.0], [8.0, 1.0]])
     out = _declutter(centers, sizes, MV)
     assert np.allclose(out, centers)
+
+
+# --- clustering ---
+
+
+def test_clusters_groups_overlapping_separates_distant():
+    anchors = np.array([[5.0, 5.0], [5.0, 5.0], [-18.0, -18.0]])
+    sizes = np.array([[8.0, 1.0], [8.0, 1.0], [8.0, 1.0]])
+    sizes_of_groups = sorted(len(g) for g in _clusters(anchors, sizes))
+    assert sizes_of_groups == [1, 2]  # two coincident together, the far one alone
 
 
 # --- border colour ---
