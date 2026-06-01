@@ -12,8 +12,8 @@ from .base import add_axis_labels, add_bird_images, add_date, add_quadrant_label
 logger = logging.getLogger(__name__)
 
 _BOX_HEIGHT = 1.0
-_DOT_OFFSET = _BOX_HEIGHT / 2 + 0.2  # label rests just above its dot
 _CLUSTER_PAD = 0.5  # breathing room kept between boxes
+_DISPLACE_EPS = 0.05  # a box is "moved" (and gets a dot + leader line) past this
 
 # Box border colour keyed to a person's dominant bird, so the label reads on any
 # quadrant background (white fill) while the border still carries meaning.
@@ -84,12 +84,13 @@ def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: 
 
 
 def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
-    """Draw a dot at each true position plus a decluttered name box.
+    """Draw name boxes, decluttering only where they would overlap.
 
-    A small dot marks every person's true (X, Y). Name boxes start just above
-    their dot and are then pushed apart so they never overlap; a leader line
-    connects any box that had to be displaced back to its dot. This keeps people
-    with identical or very similar profiles individually readable.
+    Each box starts on its person's true (X, Y). Overlapping boxes are pushed
+    apart; any box that had to move shows a small dot at its true point and a
+    grey leader line back to it, so people with identical or very similar
+    profiles stay individually readable. Boxes that don't collide are left
+    exactly on their point, with no extra marks.
     """
     texts = [_box_text(row) for _, row in df.iterrows()]
     if not texts:
@@ -99,21 +100,17 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     sizes = np.array([[max(8, len(t) * 0.4), _BOX_HEIGHT] for t in texts], dtype=float)
     anchors = df[["X", "Y"]].to_numpy(dtype=float)
 
-    # Labels rest just above their dot, then get pushed apart.
-    start = anchors.copy()
-    start[:, 1] += _DOT_OFFSET
-    pos = _declutter(start, sizes, max_value)
+    # Boxes start on their true point; only overlapping ones get pushed apart.
+    pos = _declutter(anchors.copy(), sizes, max_value)
 
     for i, text in enumerate(texts):
         bx, by = pos[i]
         ax_, ay = anchors[i]
 
-        # Dot at the true position (always visible, drawn above the boxes).
-        ax.scatter([ax_], [ay], s=7, color="black", zorder=4)
-
-        # Leader line only when the box was pushed past its resting offset.
-        if np.hypot(bx - ax_, by - ay) > _DOT_OFFSET + 0.05:
-            ax.plot([bx, ax_], [by, ay], color="gray", linewidth=0.6, zorder=2)
+        # Only a box that had to move shows its true-position dot + leader line.
+        if np.hypot(bx - ax_, by - ay) > _DISPLACE_EPS:
+            ax.scatter([ax_], [ay], s=10, color="black", zorder=4)
+            ax.plot([bx, ax_], [by, ay], color="gray", linewidth=0.7, zorder=2)
 
         box = FancyBboxPatch(
             (bx - sizes[i, 0] / 2, by - sizes[i, 1] / 2),

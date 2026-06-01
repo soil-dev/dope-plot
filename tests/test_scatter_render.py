@@ -49,13 +49,22 @@ def test_add_name_boxes_one_box_and_text_per_row(fig_ax):
     assert any("Alice" in t.get_text() for t in ax.texts)
 
 
-def test_add_name_boxes_draws_a_dot_per_person(fig_ax):
+def test_add_name_boxes_no_dot_without_collision(fig_ax):
     _, ax = fig_ax
-    df = _df()
+    df = _df()  # two distinct, far-apart points
     before = len(ax.collections)
     add_name_boxes(ax, df, MV)
-    # One scatter dot (true position) per person.
-    assert len(ax.collections) - before == len(df)
+    # On-demand: boxes that don't overlap rest on their point with no dot.
+    assert len(ax.collections) == before
+
+
+def test_add_name_boxes_dots_on_collision(fig_ax):
+    _, ax = fig_ax
+    df = pd.DataFrame({"Name": ["A", "B"], "Note": ["D/O", "D/O"], "X": [5.0, 5.0], "Y": [5.0, 5.0]})
+    before = len(ax.collections)
+    add_name_boxes(ax, df, MV)
+    # Two coincident boxes both get displaced -> a dot each.
+    assert len(ax.collections) - before == 2
 
 
 def test_add_name_boxes_handles_nan_note(fig_ax):
