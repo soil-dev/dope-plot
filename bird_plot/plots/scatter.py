@@ -85,7 +85,7 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
         ax_, ay = anchors[i]
 
         # Dot at the true position (always visible, drawn above the boxes).
-        ax.scatter([ax_], [ay], s=14, color="steelblue", zorder=4)
+        ax.scatter([ax_], [ay], s=7, color="black", zorder=4)
 
         # Leader line only when the box was pushed past its resting offset.
         if np.hypot(bx - ax_, by - ay) > _DOT_OFFSET + 0.05:
