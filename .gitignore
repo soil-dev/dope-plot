@@ -17,6 +17,9 @@ venv.bak/
 # Matplotlib configuration
 .matplotlib/
 
+# Claude Code local settings
+.claude/
+
 # Test / coverage artifacts
 .coverage
 .coverage.*
