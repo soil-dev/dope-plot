@@ -19,9 +19,33 @@ def test_radar_png_returns_png_bytes():
     assert out[:8] == PNG_MAGIC
 
 
+def test_radar_png_raises_on_blank_name():
+    with pytest.raises(ValueError):
+        radar_png("", 16, 4, 9, 3)
+
+
+def test_radar_png_raises_on_invalid_score():
+    with pytest.raises(ValueError):
+        radar_png("Alice", 16, -4, 9, 3)
+
+
 def test_comparison_png_returns_png_bytes():
     a = {"Name": "Alice", "Dove": 16, "Eagle": 4, "Owl": 9, "Peacock": 3, "Note": "D/O"}
     b = {"Name": "Bob", "Dove": 6, "Eagle": 5, "Owl": 2, "Peacock": 12, "Note": "P/D"}
+    out = comparison_png(a, b)
+    assert out[:8] == PNG_MAGIC
+
+
+def test_comparison_png_raises_on_invalid_profile():
+    a = {"Name": "Alice", "Dove": 16, "Eagle": 4, "Owl": 9, "Peacock": 3}
+    b = {"Name": "Bob", "Dove": 6, "Eagle": float("inf"), "Owl": 2, "Peacock": 12}
+    with pytest.raises(ValueError):
+        comparison_png(a, b)
+
+
+def test_comparison_png_coerces_numeric_strings():
+    a = {"Name": "Alice", "Dove": "16", "Eagle": "4", "Owl": "9", "Peacock": "3"}
+    b = {"Name": "Bob", "Dove": "6", "Eagle": "5", "Owl": "2", "Peacock": "12"}
     out = comparison_png(a, b)
     assert out[:8] == PNG_MAGIC
 

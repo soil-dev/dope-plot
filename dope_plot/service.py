@@ -11,7 +11,7 @@ import io
 
 import pandas as pd
 
-from .cli import process_dataframe
+from .cli import process_dataframe, validate_personality_df
 from .config import load_config
 from .plots.radar import radar_chart
 from .plots.scatter import scatter_chart
@@ -21,6 +21,12 @@ SCORE_FIELDS = ("Dove", "Eagle", "Owl", "Peacock")
 
 def _person(name: str, dove: float, eagle: float, owl: float, peacock: float, note: str = "") -> dict:
     return {"Name": name, "Dove": dove, "Eagle": eagle, "Owl": owl, "Peacock": peacock, "Note": note}
+
+
+def _validated_profile(profile: dict) -> dict:
+    """Validate one direct radar/comparison profile and return coerced values."""
+    validated = validate_personality_df(pd.DataFrame([profile]))
+    return validated.iloc[0].to_dict()
 
 
 def scatter_png(csv_text: str, config: dict | None = None) -> bytes:
@@ -44,8 +50,9 @@ def radar_png(
 ) -> bytes:
     """Render a single person's radar chart and return PNG bytes."""
     config = config or load_config()
+    data = _validated_profile(_person(name, dove, eagle, owl, peacock, note))
     buf = io.BytesIO()
-    radar_chart(_person(name, dove, eagle, owl, peacock, note), buf, config)
+    radar_chart(data, buf, config)
     return buf.getvalue()
 
 
@@ -55,6 +62,8 @@ def comparison_png(person_a: dict, person_b: dict, config: dict | None = None) -
     Each person dict needs Name and the four score fields (Note optional).
     """
     config = config or load_config()
+    person_a = _validated_profile(person_a)
+    person_b = _validated_profile(person_b)
     buf = io.BytesIO()
     radar_chart(person_a, buf, config, data2=person_b)
     return buf.getvalue()
