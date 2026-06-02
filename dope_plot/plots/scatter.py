@@ -19,6 +19,12 @@ _BOX_GAP = 0.08  # minimum gap (a few px) kept between a card edge and a neighbo
 _LEADER_MIN = 2.5  # only mark a moved card (dot + leader line) when pushed this far; smaller nudges read as on-point
 _GRADIENT_BAND = 0.12  # half-width of the soft transition between the two fill colours
 
+# Cards stack as units (shadow -> fill -> text) at an increasing zorder per card, so
+# a card drawn on top casts its shadow OVER the cards beneath it. _CARD_DZ must exceed
+# the shadow->text span (0.2) within one card so blocks never interleave.
+_CARD_Z0 = 3.0
+_CARD_DZ = 0.3
+
 _BIRD_NAME = {"D": "Dove", "E": "Eagle", "O": "Owl", "P": "Peacock"}
 # Light bird hues for the label fill (matching the quadrant colours).
 _BIRD_LIGHT = {"D": "lightskyblue", "E": "lightcoral", "O": "khaki", "P": "lightgreen"}
@@ -91,9 +97,13 @@ def _gradient_image(rgba1, rgba2, ratio):
     return ((1 - blend)[:, None] * rgba1 + blend[:, None] * rgba2).reshape(1, 64, 4)
 
 
-def _fill_gradient_box(ax, bx, by, w, h, c1, c2, ratio):
+def _fill_gradient_box(ax, bx, by, w, h, c1, c2, ratio, z):
     """Draw a rounded, borderless label box filled with a primary->secondary
-    pastel gradient, plus a soft drop shadow for a bit of volume."""
+    pastel gradient, plus a soft drop shadow for a bit of volume.
+
+    ``z`` is the card's base zorder: the shadow sits at ``z`` and the fill just
+    above it, so a higher-``z`` card casts its shadow over lower cards.
+    """
     ratio = min(max(ratio, 0.05), 0.95)
     fill = _gradient_image(_pastel(c1), _pastel(c2), ratio)
     rounded = f"round,pad={_BOX_PAD}"
@@ -101,20 +111,20 @@ def _fill_gradient_box(ax, bx, by, w, h, c1, c2, ratio):
     # Drop shadow: a hidden white source patch (fully covered by the opaque fill
     # on top) whose offset shadow peeks out below-right.
     shadow = FancyBboxPatch(
-        (bx - w / 2, by - h / 2), w, h, boxstyle=rounded, facecolor="white", edgecolor="none", zorder=2.6,
+        (bx - w / 2, by - h / 2), w, h, boxstyle=rounded, facecolor="white", edgecolor="none", zorder=z,
     )
     shadow.set_path_effects([withSimplePatchShadow(offset=(2.5, -2.5), alpha=0.15, shadow_rgbFace="black")])
     ax.add_patch(shadow)
 
-    # Gradient fill, clipped to the rounded box.
+    # Gradient fill, clipped to the rounded box (just above this card's shadow).
     clip = FancyBboxPatch(
-        (bx - w / 2, by - h / 2), w, h, boxstyle=rounded, facecolor="none", edgecolor="none", zorder=3,
+        (bx - w / 2, by - h / 2), w, h, boxstyle=rounded, facecolor="none", edgecolor="none", zorder=z + 0.1,
     )
     ax.add_patch(clip)
     img = ax.imshow(
         fill,
         extent=(bx - w / 2 - _BOX_PAD, bx + w / 2 + _BOX_PAD, by - h / 2 - _BOX_PAD, by + h / 2 + _BOX_PAD),
-        aspect="auto", origin="lower", zorder=3, interpolation="bilinear",
+        aspect="auto", origin="lower", zorder=z + 0.1, interpolation="bilinear",
     )
     img.set_clip_path(clip)
 
@@ -277,12 +287,13 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     # A card pushed well off its point gets a dot there + a dashed vertical leader
     # line back to it. A card only nudged a little is left unmarked — it still reads
     # as on its point, and a tiny dot-and-stub by the box edge looks worse than none.
+    dot_z = _CARD_Z0 + len(texts) * _CARD_DZ + 1.0  # dots sit above every card so they stay visible
     for i in moved:
         if abs(pos[i][1] - anchors[i][1]) < _LEADER_MIN:
             continue
         dot_x, dot_y = anchors[i]
         ax.plot([pos[i][0], dot_x], [pos[i][1], dot_y], color="black", linewidth=0.5, linestyle="--", zorder=2)
-        ax.scatter([dot_x], [dot_y], s=2, color="black", zorder=4)
+        ax.scatter([dot_x], [dot_y], s=2, color="black", zorder=dot_z)
 
     # Gradient-filled label boxes (imshow can disturb the axes aspect/limits, so
     # snapshot and restore them afterwards).
@@ -290,8 +301,9 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     for i, text in enumerate(texts):
         bx, by = pos[i]
         c1, c2, ratio = stops[i]
-        _fill_gradient_box(ax, bx, by, sizes[i, 0], sizes[i, 1], c1, c2, ratio)
-        ax.text(bx, by, text, fontsize=10, ha="center", va="center", color="black", zorder=5)
+        z = _CARD_Z0 + i * _CARD_DZ
+        _fill_gradient_box(ax, bx, by, sizes[i, 0], sizes[i, 1], c1, c2, ratio, z)
+        ax.text(bx, by, text, fontsize=10, ha="center", va="center", color="black", zorder=z + 0.2)
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlim(*xlim)
     ax.set_ylim(*ylim)
