@@ -14,7 +14,7 @@ Run automatically by poetry-core via ``[tool.poetry.build]``; tests call
 import shutil
 from pathlib import Path
 
-BUNDLED_SET = "hunt"
+BUNDLED_SET = "emoji"
 
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "icons" / BUNDLED_SET

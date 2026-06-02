@@ -78,7 +78,7 @@ def test_shipped_config_is_valid():
 def test_bundled_icons_match_the_bundled_set():
     """dope_plot/assets/icons is filled by build.py (and the test bootstrap)
     from the canonical top-level set; the artifact must mirror it exactly."""
-    src = REPO_ROOT / "icons" / "hunt"  # keep in sync with build.BUNDLED_SET
+    src = REPO_ROOT / "icons" / "emoji"  # keep in sync with build.BUNDLED_SET
     artifact = REPO_ROOT / "dope_plot" / "assets" / "icons"
     src_files = sorted(p.name for p in src.glob("*.png"))
     artifact_files = sorted(p.name for p in artifact.glob("*.png"))

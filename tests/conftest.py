@@ -17,7 +17,7 @@ matplotlib.use("Agg")
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-ICONS_SET = REPO_ROOT / "icons" / "hunt"
+ICONS_SET = REPO_ROOT / "icons" / "emoji"
 
 
 @pytest.fixture(scope="session", autouse=True)

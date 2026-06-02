@@ -38,7 +38,7 @@ CONFIG = {
         "bottom_left": "lightcoral",
         "alpha": 0.2,
     },
-    "paths": {"icons_set": str(REPO / "icons" / "hunt"), "output": "charts"},
+    "paths": {"icons_set": str(REPO / "icons" / "emoji"), "output": "charts"},
 }
 
 
