@@ -18,9 +18,10 @@ These plots are especially useful for workshops, coaching sessions, and team-bui
 2. [Installation](#installation)
 3. [Usage](#usage)
 4. [Input Data Format](#input-data-format)
-5. [Testing](#testing)
-6. [Example Outputs](#example-outputs)
-7. [Design Notes](#design-notes)
+5. [Use from AI assistants (MCP)](#use-from-ai-assistants-mcp)
+6. [Testing](#testing)
+7. [Example Outputs](#example-outputs)
+8. [Design Notes](#design-notes)
 
 ---
 
@@ -109,6 +110,42 @@ _Note: Run `poetry run dope-plot --help` for detailed usage._
 - **Name**: The individual’s name or identifier.
 - **Dove, Eagle, Owl, Peacock**: Numeric scores representing each “bird” trait.
 - **Note**: Individual's primary and secondary dominant "bird" traits, separated by a forward slash.
+
+## Use from AI assistants (MCP)
+
+Dope-Plot ships a [Model Context Protocol](https://modelcontextprotocol.io)
+server so AI assistants can generate charts directly, getting the rendered PNG
+back inline. It works with any MCP-capable client (Claude Desktop/Code, n8n's
+MCP node, OpenAI agents, …).
+
+Install with the optional `mcp` extra and run the server (it speaks MCP over
+stdio):
+
+```bash
+pip install 'dope-plot[mcp]'
+dope-plot-mcp
+```
+
+Then register it in your client. For example, Claude Desktop
+(`claude_desktop_config.json`) or Claude Code (`.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "dope-plot": { "command": "dope-plot-mcp" }
+  }
+}
+```
+
+Tools exposed (each returns a PNG):
+
+- **`scatter_chart(csv)`** — the group quadrant plot from CSV text
+  (`Name,Dove,Eagle,Owl,Peacock[,Note]`).
+- **`radar_chart(name, dove, eagle, owl, peacock, note="")`** — one person's radar.
+- **`comparison_chart(...two people's scores...)`** — overlay two radars with an
+  overlap percentage.
+
+No `config.toml` is required — the server uses the bundled defaults and assets.
 
 ## Testing
 

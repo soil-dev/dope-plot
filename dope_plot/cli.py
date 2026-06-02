@@ -19,8 +19,36 @@ REQUIRED_COLUMNS = {"Name", "Dove", "Owl", "Peacock", "Eagle"}
 SCORE_COLUMNS = ["Dove", "Owl", "Peacock", "Eagle"]
 
 
+def validate_personality_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Validate and coerce a personality DataFrame, raising ValueError on bad data.
+
+    Returns a copy with the four score columns coerced to numeric. Shared by the
+    CLI (which turns failures into a clean process exit) and the in-process
+    service/MCP layer (which surfaces the error to the caller).
+    """
+    missing = REQUIRED_COLUMNS - set(df.columns)
+    if missing:
+        raise ValueError(f"missing required columns: {', '.join(sorted(missing))}")
+    if df.empty:
+        raise ValueError("no data rows")
+    if (df["Name"].isna() | df["Name"].astype(str).str.strip().eq("")).any():
+        raise ValueError("blank names")
+
+    df = df.copy()
+    for col in SCORE_COLUMNS:
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        if numeric.isna().any() or not np.isfinite(numeric).all():
+            raise ValueError(f"non-numeric, blank, or non-finite scores in column: {col}")
+        df[col] = numeric
+
+    negative = [col for col in SCORE_COLUMNS if (df[col] < 0).any()]
+    if negative:
+        raise ValueError(f"negative scores in columns: {', '.join(sorted(negative))}")
+    return df
+
+
 def load_csv_data(file_path):
-    """Load and validate CSV data from the given file path."""
+    """Load, validate and coerce CSV data from a path (exits the process on error)."""
     if not Path(file_path).exists():
         logger.error("CSV file '%s' not found!", file_path)
         sys.exit(1)
@@ -34,37 +62,11 @@ def load_csv_data(file_path):
         logger.error("Could not parse CSV file '%s'. Check its format.", file_path)
         sys.exit(1)
 
-    missing = REQUIRED_COLUMNS - set(df.columns)
-    if missing:
-        logger.error("CSV file '%s' is missing required columns: %s", file_path, ", ".join(sorted(missing)))
+    try:
+        return validate_personality_df(df)
+    except ValueError as exc:
+        logger.error("CSV file '%s': %s", file_path, exc)
         sys.exit(1)
-
-    if df.empty:
-        logger.error("CSV file '%s' does not contain any data rows.", file_path)
-        sys.exit(1)
-
-    missing_names = df["Name"].isna() | df["Name"].astype(str).str.strip().eq("")
-    if missing_names.any():
-        logger.error("CSV file '%s' contains blank names.", file_path)
-        sys.exit(1)
-
-    for col in SCORE_COLUMNS:
-        numeric = pd.to_numeric(df[col], errors="coerce")
-        if numeric.isna().any() or not np.isfinite(numeric).all():
-            logger.error(
-                "CSV file '%s' contains non-numeric, blank, or non-finite scores in column: %s",
-                file_path,
-                col,
-            )
-            sys.exit(1)
-        df[col] = numeric
-
-    negative = {col: True for col in SCORE_COLUMNS if (df[col] < 0).any()}
-    if negative:
-        logger.error("Negative scores found in columns: %s", ", ".join(sorted(negative)))
-        sys.exit(1)
-
-    return df
 
 
 def calculate_team_average(df: pd.DataFrame) -> dict:
@@ -145,28 +147,32 @@ def generate_radar_charts(df: pd.DataFrame, config: dict) -> None:
                 radar_chart(person_data, output_filename, config, data2=other_data)
 
 
-def process_personality_data(data_file: str, config: dict) -> pd.DataFrame:
-    """Load and process personality data from CSV file."""
-    # Load data
-    df = load_csv_data(data_file)
-    personality_cols = SCORE_COLUMNS
-
-    # Adjust scores - multiply max scores by 1.2
-    max_scores = df[personality_cols].max(axis=1)
-    df_adjusted = (
-        df[personality_cols].where(~df[personality_cols].eq(max_scores, axis=0), df[personality_cols] * 1.2).astype(int)
-    )
-
-    # Calculate X and Y coordinates
-    df["X"] = (df_adjusted["Dove"] + df_adjusted["Owl"]) - (df_adjusted["Peacock"] + df_adjusted["Eagle"])
-    df["Y"] = (df_adjusted["Peacock"] + df_adjusted["Dove"]) - (df_adjusted["Eagle"] + df_adjusted["Owl"])
-
-    # Scale coordinates
-    # Use tanh to smoothly compress values to [-1, 1], then scale to ±max_value
+def _add_coordinates(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Add scaled X/Y quadrant coordinates from the (validated) score columns."""
+    df = df.copy()
+    cols = SCORE_COLUMNS
+    # Emphasise each row's dominant bird(s) by 1.2x before projecting to X/Y.
+    max_scores = df[cols].max(axis=1)
+    adjusted = df[cols].where(~df[cols].eq(max_scores, axis=0), df[cols] * 1.2).astype(int)
+    df["X"] = (adjusted["Dove"] + adjusted["Owl"]) - (adjusted["Peacock"] + adjusted["Eagle"])
+    df["Y"] = (adjusted["Peacock"] + adjusted["Dove"]) - (adjusted["Eagle"] + adjusted["Owl"])
+    # Compress to [-max_value, max_value] with tanh, normalised per cohort.
     df["X"] = _sigmoid_scale(df["X"], config["chart"]["max_value"])
     df["Y"] = _sigmoid_scale(df["Y"], config["chart"]["max_value"])
-
     return df
+
+
+def process_personality_data(data_file: str, config: dict) -> pd.DataFrame:
+    """Load a CSV file and add scaled X/Y coordinates (CLI entry path)."""
+    return _add_coordinates(load_csv_data(data_file), config)
+
+
+def process_dataframe(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Validate an in-memory DataFrame and add scaled X/Y coordinates.
+
+    Raises ValueError on invalid data; used by the in-process service layer.
+    """
+    return _add_coordinates(validate_personality_df(df), config)
 
 
 def main() -> None:

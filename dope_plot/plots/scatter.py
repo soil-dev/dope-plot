@@ -315,8 +315,8 @@ def scatter_chart(df: pd.DataFrame, filename: Path, config: dict) -> None:
             y=1.03,
         )
 
-        # Save the chart to file
-        plt.savefig(filename, dpi=300, bbox_inches="tight")
+        # Save the chart to file (format set explicitly so file-like buffers work)
+        plt.savefig(filename, dpi=300, bbox_inches="tight", format="png")
         logger.info(f"Plot saved to {filename}")
 
     except Exception as e:

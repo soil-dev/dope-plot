@@ -13,8 +13,13 @@ dependencies = [
     "numpy (>=2.2.1,<3.0.0)",
 ]
 
+[project.optional-dependencies]
+# Model Context Protocol server, for using dope-plot from Claude / other AIs.
+mcp = ["mcp>=1.2.0"]
+
 [project.scripts]
 dope-plot = "dope_plot.cli:main"
+dope-plot-mcp = "dope_plot.mcp_server:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
