@@ -122,7 +122,7 @@ def test_add_bird_image_missing_logs_warning(fig_ax, caplog):
     _, ax = fig_ax
     before = _count_annotation_boxes(ax)
     with caplog.at_level(logging.WARNING):
-        _add_bird_image(ax, REPO_ROOT / "dope_plot" / "assets" / "icons" / "hunt" / "nope.png", 0, 0)
+        _add_bird_image(ax, REPO_ROOT / "icons" / "hunt" / "nope.png", 0, 0)
     assert _count_annotation_boxes(ax) == before
     assert any("not found" in r.message.lower() for r in caplog.records)
 
@@ -130,7 +130,7 @@ def test_add_bird_image_missing_logs_warning(fig_ax, caplog):
 def test_add_bird_image_present_adds_artist(fig_ax):
     _, ax = fig_ax
     before = _count_annotation_boxes(ax)
-    _add_bird_image(ax, REPO_ROOT / "dope_plot" / "assets" / "icons" / "hunt" / "dove.png", 0, 0)
+    _add_bird_image(ax, REPO_ROOT / "icons" / "hunt" / "dove.png", 0, 0)
     assert _count_annotation_boxes(ax) == before + 1
 
 

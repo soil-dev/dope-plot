@@ -29,8 +29,7 @@ MINIMAL_CONFIG = {
         "alpha": 0.2,
     },
     "paths": {
-        "icons_dir": str(Path(__file__).resolve().parent.parent / "dope_plot" / "assets" / "icons"),
-        "icon_set": "hunt",
+        "icons_set": str(Path(__file__).resolve().parent.parent / "icons" / "hunt"),
         "output": "charts",
     },
 }

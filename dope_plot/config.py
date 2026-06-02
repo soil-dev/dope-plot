@@ -11,7 +11,7 @@ BUNDLED_CONFIG_FILE = "default_config.toml"
 _REQUIRED_KEYS: dict[str, list] = {
     "chart": ["max_value", "figure_size", "grid_step"],
     "colors": ["top_right", "bottom_right", "top_left", "bottom_left", "alpha"],
-    "paths": ["icons_dir", "icon_set", "output"],
+    "paths": ["icons_set", "output"],
 }
 
 
@@ -44,8 +44,8 @@ def _load_bundled_config() -> dict:
         logger.error("Failed to load bundled config: %s", e)
         raise
 
-    icons_dir = package_root.joinpath(config["paths"]["icons_dir"])
-    config["paths"]["icons_dir"] = str(icons_dir)
+    icons_set = package_root.joinpath(config["paths"]["icons_set"])
+    config["paths"]["icons_set"] = str(icons_set)
     return config
 
 

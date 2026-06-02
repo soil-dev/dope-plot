@@ -14,6 +14,5 @@ bottom_left = "lightcoral"
 alpha = 0.2
 
 [paths]
-icons_dir = "assets/icons"
-icon_set = "hunt"
+icons_set = "assets/icons/hunt"
 output = "charts"
