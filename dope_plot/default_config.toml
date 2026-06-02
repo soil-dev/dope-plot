@@ -3,7 +3,7 @@ categories = ["Dove", "Owl", "Peacock", "Eagle"]
 max_value = 25
 figure_size = [8, 8]
 grid_step = 5
-show_project_link = false
+show_project_link = true
 
 [colors]
 # quadrants
