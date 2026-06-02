@@ -34,7 +34,19 @@ jobs:
       - name: Build & clean-install smoke test
         run: |
           poetry build
-          python -m zipfile -l dist/*.whl | grep -q "assets/icons/dove.png"  # build.py bundled the icons
+          python - <<'PY'
+          import glob
+          import zipfile
+
+          wheels = glob.glob("dist/*.whl")
+          assert len(wheels) == 1, wheels
+          assert wheels[0].endswith("-py3-none-any.whl"), wheels[0]
+          with zipfile.ZipFile(wheels[0]) as wheel:
+              names = set(wheel.namelist())
+              assert "icons/emoji/dove.png" in names
+              wheel_meta = wheel.read(next(n for n in names if n.endswith(".dist-info/WHEEL"))).decode()
+              assert "Root-Is-Purelib: true" in wheel_meta
+          PY
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install dist/*.whl
           mkdir -p /tmp/smoke-run && cd /tmp/smoke-run

@@ -45,16 +45,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 include = [
     { path = "dope_plot/default_config.toml", format = ["sdist", "wheel"] },
-    # canonical icon sets (source material for the build-time bundle)
-    { path = "icons/**/*", format = ["sdist"] },
-    # build artifact created by build.py: the bundled default set
-    { path = "dope_plot/assets/icons/*.png", format = ["wheel"] },
+    # Icon sets are data files installed next to the package; the bundled
+    # default config points at ../icons/emoji from dope_plot/.
+    { path = "icons/**/*", format = ["sdist", "wheel"] },
 ]
-
-[tool.poetry.build]
-# Copies icons/<BUNDLED_SET> into dope_plot/assets/icons at build time.
-script = "build.py"
-generate-setup-file = false
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.15.15"
