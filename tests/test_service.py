@@ -35,3 +35,10 @@ def test_scatter_png_raises_on_invalid_csv():
 def test_scatter_png_raises_on_negative_scores():
     with pytest.raises(ValueError):
         scatter_png("Name,Dove,Eagle,Owl,Peacock\nAlice,16,-4,9,3\n")
+
+
+def test_scatter_png_raises_valueerror_on_unparseable_csv():
+    # Empty / unparseable input is surfaced as ValueError too (per the docstring),
+    # not a raw pandas error.
+    with pytest.raises(ValueError):
+        scatter_png("")

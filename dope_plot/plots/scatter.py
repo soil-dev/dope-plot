@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 _BOX_HEIGHT = 1.0
 _BOX_PAD = 0.3  # FancyBboxPatch round padding, in data units (expands the box each side)
-_BOX_GAP = 0.08  # minimum visual gap kept between boxes (a few px) so they never touch
-_CLUSTER_PAD = 2 * _BOX_PAD + _BOX_GAP  # reserve each box's padding on both sides + the gap
+_BOX_GAP = 0.08  # minimum gap (a few px) kept between a card edge and a neighbour's text
 _LEADER_MIN = 2.5  # only mark a moved card (dot + leader line) when pushed this far; smaller nudges read as on-point
 _GRADIENT_BAND = 0.12  # half-width of the soft transition between the two fill colours
 
@@ -120,20 +119,15 @@ def _fill_gradient_box(ax, bx, by, w, h, c1, c2, ratio):
     img.set_clip_path(clip)
 
 
-def _pair_thresholds(i: int, j: int, sizes: np.ndarray, text_sizes) -> tuple:
+def _pair_thresholds(i: int, j: int, sizes: np.ndarray, text_sizes: np.ndarray) -> tuple:
     """Minimum centre separation on each axis before labels i, j 'conflict'.
 
-    Default (``text_sizes`` is None): the full boxes mustn't overlap, keeping
-    _CLUSTER_PAD of breathing room so cards never even touch. When ``text_sizes``
-    is given, only forbid an opaque box from reaching the *other box's text* — so
-    cards may overlap freely as long as every label stays fully legible.
+    Cards may overlap freely; what's forbidden is an opaque box reaching the
+    *other box's text*. This returns the separation at which neither card would
+    cover the other's text (plus a hair of gap), so every label stays legible.
     """
-    if text_sizes is None:
-        tx = (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD
-        ty = (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD
-    else:
-        tx = max(sizes[i, 0] + text_sizes[j, 0], sizes[j, 0] + text_sizes[i, 0]) / 2 + _BOX_GAP
-        ty = max(sizes[i, 1] + text_sizes[j, 1], sizes[j, 1] + text_sizes[i, 1]) / 2 + _BOX_GAP
+    tx = max(sizes[i, 0] + text_sizes[j, 0], sizes[j, 0] + text_sizes[i, 0]) / 2 + _BOX_GAP
+    ty = max(sizes[i, 1] + text_sizes[j, 1], sizes[j, 1] + text_sizes[i, 1]) / 2 + _BOX_GAP
     return tx, ty
 
 
@@ -155,7 +149,7 @@ def _text_data_extent(ax: Axes, s: str, fontsize: int, fallback: tuple) -> tuple
         return fallback
 
 
-def _clusters(anchors: np.ndarray, sizes: np.ndarray, text_sizes: np.ndarray | None = None) -> list:
+def _clusters(anchors: np.ndarray, sizes: np.ndarray, text_sizes: np.ndarray) -> list:
     """Group people whose labels conflict at their true points (connected components).
 
     Conflict uses :func:`_pair_thresholds`; a list of length 1 is an isolated person.

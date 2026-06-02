@@ -29,7 +29,10 @@ def scatter_png(csv_text: str, config: dict | None = None) -> bytes:
     CSV must have columns Name, Dove, Eagle, Owl, Peacock (Note optional).
     """
     config = config or load_config()
-    df = pd.read_csv(io.StringIO(csv_text))
+    try:
+        df = pd.read_csv(io.StringIO(csv_text))
+    except (pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        raise ValueError(f"could not parse CSV text: {exc}") from exc
     df = process_dataframe(df, config)  # validates + adds X/Y (raises ValueError if invalid)
     buf = io.BytesIO()
     scatter_chart(df, buf, config)

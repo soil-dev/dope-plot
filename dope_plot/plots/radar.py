@@ -244,9 +244,9 @@ def radar_chart(data1: dict, filename: Path, config: dict, data2: dict | None = 
     """
     fig = None
     try:
-        # The order is critical for angle calculations:
-        # Starting at -π/2 and going clockwise:
-        # Owl (bottom right) → Dove (top right) → Peacock (top left) → Eagle (bottom left)
+        # The order is critical for angle calculations. Starting at -π/4 and going
+        # counterclockwise: Owl (bottom right) → Dove (top right) → Peacock (top
+        # left) → Eagle (bottom left).
         ordered_categories = CATEGORIES
         values1 = [data1[cat] for cat in ordered_categories]
         angles, values1_array = calculate_angles(ordered_categories, values1)

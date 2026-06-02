@@ -93,26 +93,25 @@ def test_add_name_boxes_handles_nan_note(fig_ax):
 def test_clusters_groups_overlapping_separates_distant():
     anchors = np.array([[5.0, 5.0], [5.0, 5.0], [-18.0, -18.0]])
     sizes = np.array([[8.0, 1.0], [8.0, 1.0], [8.0, 1.0]])
-    sizes_of_groups = sorted(len(g) for g in _clusters(anchors, sizes))
+    text = sizes  # treat the whole card as text for this pure-geometry check
+    sizes_of_groups = sorted(len(g) for g in _clusters(anchors, sizes, text))
     assert sizes_of_groups == [1, 2]  # two coincident together, the far one alone
 
 
-def test_clusters_text_aware_ignores_box_only_overlap():
-    # 8-wide boxes overlap at dx=6.5, but the real 4-wide texts are clear apart.
+def test_clusters_allow_box_overlap_when_text_clear():
+    # 8-wide cards overlap at dx=6.5, but the real 4-wide texts are clear apart, so
+    # they are NOT clustered (cards may overlap as long as the text stays legible).
     anchors = np.array([[0.0, 0.0], [6.5, 0.0]])
     fat = np.array([[8.0, 1.0], [8.0, 1.0]])
     text = np.array([[4.0, 1.0], [4.0, 1.0]])
-    # Default rule clusters them (padded boxes touch)...
-    assert sorted(len(g) for g in _clusters(anchors, fat)) == [2]
-    # ...text-aware leaves them as separate singletons.
-    assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [1, 1]
+    assert sorted(len(g) for g in _clusters(anchors, fat, text)) == [1, 1]
 
 
-def test_clusters_text_aware_still_groups_real_text_overlap():
+def test_clusters_group_when_text_actually_overlaps():
     anchors = np.array([[0.0, 0.0], [3.0, 0.0]])
     fat = np.array([[8.0, 1.0], [8.0, 1.0]])
     text = np.array([[4.0, 1.0], [4.0, 1.0]])
-    assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [2]
+    assert sorted(len(g) for g in _clusters(anchors, fat, text)) == [2]
 
 
 def test_conflict_uses_text_extents():

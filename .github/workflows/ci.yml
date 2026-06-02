@@ -23,10 +23,20 @@ jobs:
         run: pipx install poetry
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --all-extras
 
       - name: Lint (ruff)
         run: poetry run ruff check .
 
       - name: Run tests
         run: poetry run pytest -q
+
+      - name: Build & clean-install smoke test
+        run: |
+          poetry build
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install dist/*.whl
+          mkdir -p /tmp/smoke-run && cd /tmp/smoke-run
+          printf 'Name,Dove,Eagle,Owl,Peacock,Note\nA,10,5,3,8,D/P\nB,2,12,9,1,E/O\n' > d.csv
+          /tmp/smoke/bin/dope-plot --data d.csv --graph scatter radar
+          test -f charts/scatter_all.png
