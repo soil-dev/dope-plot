@@ -28,7 +28,11 @@ MINIMAL_CONFIG = {
         "bottom_left": "lightcoral",
         "alpha": 0.2,
     },
-    "paths": {"birds_dir": str(Path(__file__).resolve().parent.parent / "birds"), "output": "charts"},
+    "paths": {
+        "icons_dir": str(Path(__file__).resolve().parent.parent / "icons"),
+        "icon_set": "hunt",
+        "output": "charts",
+    },
 }
 
 

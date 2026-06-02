@@ -14,5 +14,6 @@ bottom_left = "lightcoral"
 alpha = 0.2
 
 [paths]
-birds_dir = "birds"
+icons_dir = "icons"
+icon_set = "hunt"
 output = "charts"

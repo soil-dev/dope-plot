@@ -22,7 +22,8 @@ bottom_left = "lightcoral"
 alpha = 0.2
 
 [paths]
-birds_dir = "birds"
+icons_dir = "icons"
+icon_set = "hunt"
 output = "charts"
 """
 
@@ -45,8 +46,8 @@ def test_load_config_uses_bundled_defaults_without_local_config(tmp_path, monkey
     monkeypatch.chdir(tmp_path)
     cfg = load_config()
     assert cfg["paths"]["output"] == "charts"
-    assert Path(cfg["paths"]["birds_dir"]).exists()
-    assert (Path(cfg["paths"]["birds_dir"]) / "hunt-dove.png").exists()
+    assert Path(cfg["paths"]["icons_dir"]).exists()
+    assert (Path(cfg["paths"]["icons_dir"]) / cfg["paths"]["icon_set"] / "dove.png").exists()
 
 
 def test_load_config_missing_file_raises(tmp_path):
@@ -56,7 +57,7 @@ def test_load_config_missing_file_raises(tmp_path):
 
 
 def test_load_config_missing_section_raises(tmp_path):
-    text = VALID_TOML.replace('[paths]\nbirds_dir = "birds"\noutput = "charts"\n', "")
+    text = VALID_TOML.replace('[paths]\nicons_dir = "icons"\nicon_set = "hunt"\noutput = "charts"\n', "")
     with pytest.raises(KeyError) as exc:
         load_config(_write(tmp_path, text))
     assert "paths" in str(exc.value)

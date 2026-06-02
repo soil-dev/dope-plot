@@ -76,14 +76,17 @@ def add_bird_images(ax: Axes, config: dict) -> None:
         ax: The matplotlib axes object to draw on
         config: Dictionary containing configuration including:
             - 'chart.max_value': Determines corner positions
-            - 'paths.birds_dir': Directory containing bird images
+            - 'paths.icons_dir': Directory holding the icon sets
+            - 'paths.icon_set': Which set under icons_dir to draw (e.g. "hunt")
     """
 
     # Get the maximum value from config to determine corner positions
     max_value = config["chart"]["max_value"]
 
-    # Set up path to directory containing bird images
-    birds_dir = Path(config["paths"]["birds_dir"])
+    # Icons live at <icons_dir>/<icon_set>/<bird>.png. A set is one artist's
+    # collection (its directory name credits the author), so alternative sets
+    # can sit side by side and be selected from the config.
+    icon_dir = Path(config["paths"]["icons_dir"]) / config["paths"]["icon_set"]
 
     # Define bird placements in corners:
     # (bird_name, x_position, y_position)
@@ -96,10 +99,7 @@ def add_bird_images(ax: Axes, config: dict) -> None:
 
     # Add each bird image to its respective corner
     for bird, x, y in birds:
-        # Construct full path to bird image file
-        bird_path = birds_dir / f"hunt-{bird}.png"
-        # Add the bird image to the plot
-        _add_bird_image(ax, bird_path, x, y)
+        _add_bird_image(ax, icon_dir / f"{bird}.png", x, y)
 
 
 def add_quadrants(ax: Axes, config: dict) -> None:

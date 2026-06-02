@@ -45,10 +45,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 include = [
     { path = "dope_plot/default_config.toml", format = ["sdist", "wheel"] },
-    { path = "dope_plot/assets/birds/hunt-dove.png", format = ["sdist", "wheel"] },
-    { path = "dope_plot/assets/birds/hunt-eagle.png", format = ["sdist", "wheel"] },
-    { path = "dope_plot/assets/birds/hunt-owl.png", format = ["sdist", "wheel"] },
-    { path = "dope_plot/assets/birds/hunt-peacock.png", format = ["sdist", "wheel"] },
+    # every bundled icon set: dope_plot/assets/icons/<set>/<bird>.png
+    { path = "dope_plot/assets/icons/**/*.png", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.group.dev.dependencies]

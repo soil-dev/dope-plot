@@ -16,14 +16,14 @@ matplotlib.use("Agg")
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-BIRDS_DIR = REPO_ROOT / "birds"
+ICONS_DIR = REPO_ROOT / "icons"
 
 
 @pytest.fixture
 def base_config(tmp_path):
     """A valid config dict whose paths are cwd-independent.
 
-    - birds_dir points at the real images in the repo (exercises the present-image path)
+    - icons_dir/icon_set point at the real images in the repo (exercises the present-image path)
     - output points at a per-test tmp dir so rendering tests never touch the repo
     """
     return {
@@ -40,7 +40,7 @@ def base_config(tmp_path):
             "bottom_left": "lightcoral",
             "alpha": 0.2,
         },
-        "paths": {"birds_dir": str(BIRDS_DIR), "output": str(tmp_path / "charts")},
+        "paths": {"icons_dir": str(ICONS_DIR), "icon_set": "hunt", "output": str(tmp_path / "charts")},
     }
 
 

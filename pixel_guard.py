@@ -38,7 +38,7 @@ CONFIG = {
         "bottom_left": "lightcoral",
         "alpha": 0.2,
     },
-    "paths": {"birds_dir": str(REPO / "birds"), "output": "charts"},
+    "paths": {"icons_dir": str(REPO / "icons"), "icon_set": "hunt", "output": "charts"},
 }
 
 
