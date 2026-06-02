@@ -34,6 +34,7 @@ jobs:
       - name: Build & clean-install smoke test
         run: |
           poetry build
+          python -m zipfile -l dist/*.whl | grep -q "assets/icons/dove.png"  # build.py bundled the icons
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install dist/*.whl
           mkdir -p /tmp/smoke-run && cd /tmp/smoke-run

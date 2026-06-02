@@ -17,6 +17,9 @@ venv.bak/
 # Matplotlib configuration
 .matplotlib/
 
+# Build artifact: bundled icon set, created by build.py from icons/<set>
+dope_plot/assets/icons/
+
 # Test / coverage artifacts
 .coverage
 .coverage.*

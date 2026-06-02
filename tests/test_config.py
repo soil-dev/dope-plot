@@ -75,15 +75,14 @@ def test_shipped_config_is_valid():
     assert set(cfg) >= {"chart", "colors", "paths"}
 
 
-def test_bundled_icons_mirror_top_level():
-    """The canonical icons live at the repo top level (./icons); the package
-    keeps a byte-identical mirror under dope_plot/assets/icons because a wheel
-    can only ship files inside the package. The two must never drift."""
-    top = REPO_ROOT / "icons"
-    bundled = REPO_ROOT / "dope_plot" / "assets" / "icons"
-    top_files = sorted(p.relative_to(top) for p in top.rglob("*.png"))
-    bundled_files = sorted(p.relative_to(bundled) for p in bundled.rglob("*.png"))
-    assert top_files, "no icons found at the top-level icons/ directory"
-    assert top_files == bundled_files, "icon sets differ between ./icons and the package mirror"
-    for rel in top_files:
-        assert (top / rel).read_bytes() == (bundled / rel).read_bytes(), f"{rel} drifted from the mirror"
+def test_bundled_icons_match_the_bundled_set():
+    """dope_plot/assets/icons is filled by build.py (and the test bootstrap)
+    from the canonical top-level set; the artifact must mirror it exactly."""
+    src = REPO_ROOT / "icons" / "hunt"  # keep in sync with build.BUNDLED_SET
+    artifact = REPO_ROOT / "dope_plot" / "assets" / "icons"
+    src_files = sorted(p.name for p in src.glob("*.png"))
+    artifact_files = sorted(p.name for p in artifact.glob("*.png"))
+    assert src_files == ["dove.png", "eagle.png", "owl.png", "peacock.png"]
+    assert artifact_files == src_files
+    for name in src_files:
+        assert (src / name).read_bytes() == (artifact / name).read_bytes(), name

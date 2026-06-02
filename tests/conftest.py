@@ -4,6 +4,7 @@ Importing this file (pytest does so before collecting test modules) forces the
 non-interactive Agg backend so rendering tests run without a display.
 """
 
+import importlib.util
 import os
 from pathlib import Path
 
@@ -17,6 +18,17 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ICONS_SET = REPO_ROOT / "icons" / "hunt"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def bundled_icons():
+    """dope_plot/assets/icons is a build artifact (see build.py): create it so a
+    fresh checkout behaves like a built/installed package in the bundled-config
+    tests."""
+    spec = importlib.util.spec_from_file_location("_dope_build", REPO_ROOT / "build.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.bundle_icons()
 
 
 @pytest.fixture
