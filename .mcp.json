@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dope-plot": {
+      "command": "poetry",
+      "args": ["run", "dope-plot-mcp"]
+    }
+  }
+}
