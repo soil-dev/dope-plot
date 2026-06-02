@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 GRAPH_TYPES = ["radar", "scatter"]
 DEFAULT_DATA_FILE = "data.csv"
 REQUIRED_COLUMNS = {"Name", "Dove", "Owl", "Peacock", "Eagle"}
+SCORE_COLUMNS = ["Dove", "Owl", "Peacock", "Eagle"]
 
 
 def load_csv_data(file_path):
@@ -38,7 +39,27 @@ def load_csv_data(file_path):
         logger.error("CSV file '%s' is missing required columns: %s", file_path, ", ".join(sorted(missing)))
         sys.exit(1)
 
-    negative = {col: True for col in REQUIRED_COLUMNS - {"Name"} if (df[col] < 0).any()}
+    if df.empty:
+        logger.error("CSV file '%s' does not contain any data rows.", file_path)
+        sys.exit(1)
+
+    missing_names = df["Name"].isna() | df["Name"].astype(str).str.strip().eq("")
+    if missing_names.any():
+        logger.error("CSV file '%s' contains blank names.", file_path)
+        sys.exit(1)
+
+    for col in SCORE_COLUMNS:
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        if numeric.isna().any() or not np.isfinite(numeric).all():
+            logger.error(
+                "CSV file '%s' contains non-numeric, blank, or non-finite scores in column: %s",
+                file_path,
+                col,
+            )
+            sys.exit(1)
+        df[col] = numeric
+
+    negative = {col: True for col in SCORE_COLUMNS if (df[col] < 0).any()}
     if negative:
         logger.error("Negative scores found in columns: %s", ", ".join(sorted(negative)))
         sys.exit(1)
@@ -128,7 +149,7 @@ def process_personality_data(data_file: str, config: dict) -> pd.DataFrame:
     """Load and process personality data from CSV file."""
     # Load data
     df = load_csv_data(data_file)
-    personality_cols = ["Dove", "Owl", "Peacock", "Eagle"]
+    personality_cols = SCORE_COLUMNS
 
     # Adjust scores - multiply max scores by 1.2
     max_scores = df[personality_cols].max(axis=1)
@@ -150,7 +171,6 @@ def process_personality_data(data_file: str, config: dict) -> pd.DataFrame:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    config = load_config()
 
     parser = argparse.ArgumentParser(description="Generate dope-plot personality charts.")
     parser.add_argument(
@@ -167,7 +187,15 @@ def main() -> None:
         nargs="+",
         help="Type of graph to generate (radar or scatter).",
     )
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=Path,
+        default=None,
+        help="Path to a TOML config file. Defaults to ./config.toml, then bundled package defaults.",
+    )
     args = parser.parse_args()
+    config = load_config(args.config)
 
     # Load and process data
     df = process_personality_data(args.data, config)

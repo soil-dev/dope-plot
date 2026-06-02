@@ -89,6 +89,8 @@ poetry run dope-plot --data data.csv --graph radar scatter
 
 - --data Path to the CSV data file (default: data.csv)
 - --graph Type of graph to generate (radar or scatter)
+- --config Optional path to a TOML config file. If omitted, Dope-Plot uses
+  `./config.toml` when present, otherwise its bundled defaults.
 
 3. **Check Generated Plots**
 

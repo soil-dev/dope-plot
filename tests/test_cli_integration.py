@@ -134,6 +134,24 @@ def test_main_both(monkeypatch, sample_csv, tmp_path):
     assert (out / "Alice" / "radar_Alice.png").exists()
 
 
+def test_main_passes_config_arg(monkeypatch, sample_csv, tmp_path):
+    out = tmp_path / "out"
+    config_file = tmp_path / "config.toml"
+    cfg = {**MINIMAL_CONFIG, "paths": {**MINIMAL_CONFIG["paths"], "output": str(out)}}
+    seen = {}
+
+    def fake_load_config(path=None):
+        seen["path"] = path
+        return cfg
+
+    monkeypatch.setattr(cli, "load_config", fake_load_config)
+    monkeypatch.setattr("sys.argv", ["dope-plot", "--data", sample_csv, "--config", str(config_file)])
+    main()
+
+    assert seen["path"] == config_file
+    assert (out / "scatter_all.png").exists()
+
+
 def test_main_default_graph_is_scatter(monkeypatch, sample_csv, tmp_path):
     """No --graph: characterizes current default (scatter only, no radar)."""
     out = tmp_path / "out"

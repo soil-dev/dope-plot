@@ -3,7 +3,8 @@ name = "dope-plot"
 version = "0.1.1"
 description = "A script to plot bird personality distribution"
 authors = [{ name = "Anton Arapov" }]
-license = { text = "Apache License 2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,12 +13,21 @@ dependencies = [
     "numpy (>=2.2.1,<3.0.0)",
 ]
 
+[project.scripts]
+dope-plot = "dope_plot.cli:main"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-dope-plot = "dope_plot.cli:main"
+[tool.poetry]
+include = [
+    { path = "dope_plot/default_config.toml", format = ["sdist", "wheel"] },
+    { path = "dope_plot/assets/birds/hunt-dove.png", format = ["sdist", "wheel"] },
+    { path = "dope_plot/assets/birds/hunt-eagle.png", format = ["sdist", "wheel"] },
+    { path = "dope_plot/assets/birds/hunt-owl.png", format = ["sdist", "wheel"] },
+    { path = "dope_plot/assets/birds/hunt-peacock.png", format = ["sdist", "wheel"] },
+]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.9.5"

@@ -41,6 +41,14 @@ def test_load_config_valid(tmp_path):
     assert cfg["colors"]["alpha"] == pytest.approx(0.2)
 
 
+def test_load_config_uses_bundled_defaults_without_local_config(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    cfg = load_config()
+    assert cfg["paths"]["output"] == "charts"
+    assert Path(cfg["paths"]["birds_dir"]).exists()
+    assert (Path(cfg["paths"]["birds_dir"]) / "hunt-dove.png").exists()
+
+
 def test_load_config_missing_file_raises(tmp_path):
     # A non-existent path should surface the OSError (re-raised after logging).
     with pytest.raises(FileNotFoundError):

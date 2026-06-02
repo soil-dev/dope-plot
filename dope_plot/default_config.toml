@@ -1,0 +1,18 @@
+[chart]
+categories = ["Dove", "Owl", "Peacock", "Eagle"]
+max_value = 25
+figure_size = [8, 8]
+grid_step = 5
+show_project_link = false
+
+[colors]
+# quadrants
+top_right = "lightskyblue"
+bottom_right = "khaki"
+top_left = "lightgreen"
+bottom_left = "lightcoral"
+alpha = 0.2
+
+[paths]
+birds_dir = "assets/birds"
+output = "charts"

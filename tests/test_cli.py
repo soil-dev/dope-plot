@@ -50,6 +50,34 @@ def test_load_csv_data_missing_columns(tmp_path) -> None:
         load_csv_data(str(csv))
 
 
+def test_load_csv_data_no_data_rows(tmp_path) -> None:
+    csv = tmp_path / "empty_rows.csv"
+    csv.write_text("Name,Dove,Eagle,Owl,Peacock\n")
+    with pytest.raises(SystemExit):
+        load_csv_data(str(csv))
+
+
+def test_load_csv_data_blank_name(tmp_path) -> None:
+    csv = tmp_path / "blank_name.csv"
+    csv.write_text("Name,Dove,Eagle,Owl,Peacock\n,20,10,15,5\n")
+    with pytest.raises(SystemExit):
+        load_csv_data(str(csv))
+
+
+def test_load_csv_data_non_numeric_scores(tmp_path) -> None:
+    csv = tmp_path / "bad_score.csv"
+    csv.write_text("Name,Dove,Eagle,Owl,Peacock\nAlice,twenty,10,15,5\n")
+    with pytest.raises(SystemExit):
+        load_csv_data(str(csv))
+
+
+def test_load_csv_data_non_finite_scores(tmp_path) -> None:
+    csv = tmp_path / "infinite_score.csv"
+    csv.write_text("Name,Dove,Eagle,Owl,Peacock\nAlice,inf,10,15,5\n")
+    with pytest.raises(SystemExit):
+        load_csv_data(str(csv))
+
+
 def test_load_csv_data_negative_scores(tmp_path) -> None:
     csv = tmp_path / "neg.csv"
     csv.write_text("Name,Dove,Eagle,Owl,Peacock\nAlice,20,-5,14,11\n")
