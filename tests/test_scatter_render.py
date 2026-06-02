@@ -140,6 +140,37 @@ def test_declutter_leaves_no_visual_overlap():
             assert dx >= need_x - 1e-9 or dy >= need_y - 1e-9
 
 
+# --- text-aware collision: cards may overlap as long as the text stays clear ---
+
+
+def test_clusters_text_aware_ignores_box_only_overlap():
+    # 8-wide boxes overlap at dx=6.5, but the real 4-wide texts are clear apart.
+    anchors = np.array([[0.0, 0.0], [6.5, 0.0]])
+    fat = np.array([[8.0, 1.0], [8.0, 1.0]])
+    text = np.array([[4.0, 1.0], [4.0, 1.0]])
+    # Default rule clusters them (padded boxes touch)...
+    assert sorted(len(g) for g in _clusters(anchors, fat)) == [2]
+    # ...text-aware leaves them as separate singletons (no callout).
+    assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [1, 1]
+
+
+def test_clusters_text_aware_still_groups_real_text_overlap():
+    # Close enough that the texts themselves overlap -> still one callout group.
+    anchors = np.array([[0.0, 0.0], [3.0, 0.0]])
+    fat = np.array([[8.0, 1.0], [8.0, 1.0]])
+    text = np.array([[4.0, 1.0], [4.0, 1.0]])
+    assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [2]
+
+
+def test_declutter_text_aware_leaves_box_only_overlap_untouched():
+    # The box-overlap-but-text-clear pair must not be pushed apart.
+    centers = np.array([[0.0, 0.0], [6.5, 0.0]])
+    fat = np.array([[8.0, 1.0], [8.0, 1.0]])
+    text = np.array([[4.0, 1.0], [4.0, 1.0]])
+    out = _declutter(centers, fat, MV, text_sizes=text)
+    assert np.allclose(out, centers)
+
+
 def test_add_name_boxes_empty_df_is_noop(fig_ax):
     _, ax = fig_ax
     before = (len(ax.texts), len(ax.images), len(ax.patches))

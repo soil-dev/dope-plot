@@ -19,7 +19,6 @@ _BOX_GAP = 0.08  # minimum visual gap kept between boxes (a few px) so they neve
 _CLUSTER_PAD = 2 * _BOX_PAD + _BOX_GAP  # reserve each box's padding on both sides + the gap
 _CALLOUT_OFFSET = 6.0  # how far a colliding group's stack is moved off its point
 _CALLOUT_BOX_GAP = _BOX_HEIGHT + _CLUSTER_PAD  # center-to-center spacing of stacked callout boxes
-_CALLOUT_DOT_GAP = 0.8  # vertical spacing of the per-person dots at the true point
 _GRADIENT_BAND = 0.12  # half-width of the soft transition between the two fill colours
 
 _BIRD_NAME = {"D": "Dove", "E": "Eagle", "O": "Owl", "P": "Peacock"}
@@ -122,13 +121,50 @@ def _fill_gradient_box(ax, bx, by, w, h, c1, c2, ratio):
     img.set_clip_path(clip)
 
 
-def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: int = 400) -> np.ndarray:
-    """Push overlapping label boxes apart, deterministically.
+def _pair_thresholds(i: int, j: int, sizes: np.ndarray, text_sizes) -> tuple:
+    """Minimum centre separation on each axis before labels i, j 'conflict'.
 
-    Each pair that overlaps (axis-aligned, with _CLUSTER_PAD breathing room) is
-    separated along its axis of least penetration. Boxes are wide and short, so
-    this naturally stacks coincident people vertically. Identical positions use
-    an index-based tie-break so the result is reproducible (no randomness).
+    Default (``text_sizes`` is None): the full boxes mustn't overlap, keeping
+    _CLUSTER_PAD of breathing room so cards never even touch. When ``text_sizes``
+    is given, only forbid an opaque box from reaching the *other box's text* — so
+    cards may overlap freely as long as every label stays fully legible.
+    """
+    if text_sizes is None:
+        tx = (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD
+        ty = (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD
+    else:
+        tx = max(sizes[i, 0] + text_sizes[j, 0], sizes[j, 0] + text_sizes[i, 0]) / 2 + _BOX_GAP
+        ty = max(sizes[i, 1] + text_sizes[j, 1], sizes[j, 1] + text_sizes[i, 1]) / 2 + _BOX_GAP
+    return tx, ty
+
+
+def _text_data_extent(ax: Axes, s: str, fontsize: int, fallback: tuple) -> tuple:
+    """Measure the rendered (width, height) of ``s`` in data units at ``fontsize``.
+
+    Falls back to a rough estimate if no renderer is available yet.
+    """
+    try:
+        renderer = ax.figure.canvas.get_renderer()
+        t = ax.text(0, 0, s, fontsize=fontsize, ha="center", va="center")
+        ext = t.get_window_extent(renderer)
+        t.remove()
+        inv = ax.transData.inverted()
+        x0, y0 = inv.transform((ext.x0, ext.y0))
+        x1, y1 = inv.transform((ext.x1, ext.y1))
+        return abs(x1 - x0), abs(y1 - y0)
+    except Exception:
+        return fallback
+
+
+def _declutter(
+    centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: int = 400, text_sizes: np.ndarray | None = None
+) -> np.ndarray:
+    """Push conflicting label boxes apart, deterministically.
+
+    Each conflicting pair (see :func:`_pair_thresholds`) is separated along its
+    axis of least penetration. Boxes are wide and short, so this naturally stacks
+    coincident people vertically. Identical positions use an index-based tie-break
+    so the result is reproducible (no randomness).
     """
     pos = centers.astype(float).copy()
     n = len(pos)
@@ -137,8 +173,9 @@ def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: 
         for i in range(n):
             for j in range(i + 1, n):
                 dx, dy = pos[i, 0] - pos[j, 0], pos[i, 1] - pos[j, 1]
-                overlap_x = (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD - abs(dx)
-                overlap_y = (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD - abs(dy)
+                tx, ty = _pair_thresholds(i, j, sizes, text_sizes)
+                overlap_x = tx - abs(dx)
+                overlap_y = ty - abs(dy)
                 if overlap_x > 0 and overlap_y > 0:
                     if overlap_y <= overlap_x:
                         shift = overlap_y / 2
@@ -159,10 +196,10 @@ def _declutter(centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: 
     return pos
 
 
-def _clusters(anchors: np.ndarray, sizes: np.ndarray) -> list:
-    """Group people whose boxes overlap at their true points (connected components).
+def _clusters(anchors: np.ndarray, sizes: np.ndarray, text_sizes: np.ndarray | None = None) -> list:
+    """Group people whose labels conflict at their true points (connected components).
 
-    Returns a list of index lists; a list of length 1 is an isolated person.
+    Conflict uses :func:`_pair_thresholds`; a list of length 1 is an isolated person.
     """
     n = len(anchors)
     parent = list(range(n))
@@ -177,9 +214,8 @@ def _clusters(anchors: np.ndarray, sizes: np.ndarray) -> list:
         for j in range(i + 1, n):
             dx = abs(anchors[i, 0] - anchors[j, 0])
             dy = abs(anchors[i, 1] - anchors[j, 1])
-            near_x = dx < (sizes[i, 0] + sizes[j, 0]) / 2 + _CLUSTER_PAD
-            near_y = dy < (sizes[i, 1] + sizes[j, 1]) / 2 + _CLUSTER_PAD
-            if near_x and near_y:
+            tx, ty = _pair_thresholds(i, j, sizes, text_sizes)
+            if dx < tx and dy < ty:
                 parent[find(i)] = find(j)
 
     groups = {}
@@ -189,13 +225,14 @@ def _clusters(anchors: np.ndarray, sizes: np.ndarray) -> list:
 
 
 def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
-    """Draw name boxes, with callouts for people who collide.
+    """Draw name boxes, with callouts only where labels would obscure each other.
 
-    Each box starts on its person's true (X, Y). Where boxes overlap, the whole
-    group is lifted aside (horizontally, toward the birds' side) and each person
-    gets their own dot fanned at the true location, joined to their box by a thin
-    dashed leader line — so even identical profiles stay individually readable.
-    People who don't collide are left exactly on their point.
+    Each box starts on its person's true (X, Y). A label is moved only when another
+    opaque card would actually cover its text; cards are free to overlap as long as
+    every label stays legible. Where text genuinely collides, the whole group is
+    lifted aside (horizontally, toward the birds' side) and each person gets their
+    own dot at their true location, joined to their box by a thin dashed leader line
+    — so even identical profiles stay individually readable.
     """
     texts = [_box_text(row) for _, row in df.iterrows()]
     if not texts:
@@ -204,15 +241,20 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     bird_vecs = [_bird_vector(row) for _, row in df.iterrows()]
 
     sizes = np.array([[max(8, len(t) * 0.4), _BOX_HEIGHT] for t in texts], dtype=float)
+    # Real rendered text extents (data units): a label is only "in the way" when
+    # another opaque card would cover this text — not when the padded boxes graze.
+    text_sizes = np.array(
+        [_text_data_extent(ax, t, 10, (len(t) * 0.4, _BOX_HEIGHT * 0.7)) for t in texts], dtype=float
+    )
     anchors = df[["X", "Y"]].to_numpy(dtype=float)
 
     # Singletons rest on their point; clustered boxes get repositioned below.
-    pos = _declutter(anchors.copy(), sizes, max_value)
+    pos = _declutter(anchors.copy(), sizes, max_value, text_sizes=text_sizes)
 
     # For each overlapping group, lift the whole stack along its bird direction
-    # to make room for a dot per person fanned at the true location.
-    clusters = []  # (member indices, true cx, cy)
-    for group in _clusters(anchors, sizes):
+    # to make room for a dot per person at their true location.
+    clusters = []  # member-index lists for groups whose text actually collides
+    for group in _clusters(anchors, sizes, text_sizes=text_sizes):
         if len(group) < 2:
             continue
         members = sorted(group, key=lambda i: anchors[i, 1], reverse=True)
@@ -238,22 +280,21 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
         for rank, i in enumerate(members):
             level = (n - 1) / 2 - rank
             pos[i] = [center[0], center[1] + level * _CALLOUT_BOX_GAP]
-        clusters.append((group, cx, cy))
+        clusters.append(group)
 
     # A moved stack may now overlap a neighbour; declutter once more so
     # everything is collision-free before we draw the leader lines.
     if clusters:
-        pos = _declutter(pos, sizes, max_value)
+        pos = _declutter(pos, sizes, max_value, text_sizes=text_sizes)
 
-    # One dot per collided person at its true location, matched to the FINAL
-    # vertical order of the boxes. The line simply targets the box centre — the
-    # opaque gradient box drawn on top hides the part of the line beneath it.
-    for group, cx, cy in clusters:
-        members = sorted(group, key=lambda i: pos[i][1], reverse=True)
-        n = len(members)
-        for rank, i in enumerate(members):
-            level = (n - 1) / 2 - rank
-            dot_x, dot_y = cx, cy + level * _CALLOUT_DOT_GAP
+    # One dot per collided person at their TRUE (X, Y) — the whole point of the
+    # callout is to mark where the person actually is, then lead the eye to their
+    # moved box. The line targets the box centre; the opaque gradient box drawn on
+    # top hides the part of the line beneath it. (Identical profiles share a point,
+    # so their dots coincide and their leader lines simply converge there.)
+    for group in clusters:
+        for i in group:
+            dot_x, dot_y = anchors[i]
             ax.plot([pos[i][0], dot_x], [pos[i][1], dot_y], color="black", linewidth=0.5, linestyle="--", zorder=2)
             ax.scatter([dot_x], [dot_y], s=2, color="black", zorder=4)
 
