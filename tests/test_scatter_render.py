@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from dope_plot.plots.base import setup_plot
-from dope_plot.plots.scatter import _BOX_GAP, _BOX_PAD, _clusters, _declutter, add_grid, add_name_boxes, scatter_chart
+from dope_plot.plots.scatter import _clusters, _conflict, add_grid, add_name_boxes, scatter_chart
 
 MV = 25
 
@@ -53,19 +53,30 @@ def test_add_name_boxes_no_dot_without_collision(fig_ax):
     df = _df()  # two distinct, far-apart points
     before = len(ax.collections)
     add_name_boxes(ax, df, MV)
-    # On-demand: boxes that don't overlap rest on their point with no dot.
+    # No text overlap -> every card rests on its point with no dot.
     assert len(ax.collections) == before
 
 
-def test_add_name_boxes_dot_per_collided_person(fig_ax):
+def test_add_name_boxes_small_nudge_has_no_dot(fig_ax):
     _, ax = fig_ax
-    # Three coincident people -> a distinct dot each (callout).
-    df = pd.DataFrame(
-        {"Name": ["A", "B", "C"], "Note": ["D/O", "D/O", "D/O"], "X": [5.0, 5.0, 5.0], "Y": [5.0, 5.0, 5.0]}
-    )
+    # Two cards whose text overlaps -> one is nudged a little to clear the text, but
+    # a small nudge is left unmarked (no dot/line); it still reads as on its point.
+    df = pd.DataFrame({"Name": ["Alpha", "Beta"], "Note": ["D/O", "D/O"], "X": [0.0, 0.5], "Y": [0.0, 0.0]})
     before = len(ax.collections)
     add_name_boxes(ax, df, MV)
-    assert len(ax.collections) - before == 3
+    assert len(ax.collections) == before  # no dot for a small nudge
+    # ...but the overlap was still resolved: the labels end up on different rows.
+    ys = sorted(t.get_position()[1] for t in ax.texts if "/" in t.get_text())
+    assert ys[0] != ys[1]
+
+
+def test_add_name_boxes_far_push_draws_dot(fig_ax):
+    _, ax = fig_ax
+    # A tight pile forces some cards well off their point -> those get a dot + line.
+    df = pd.DataFrame({"Name": list("ABCDEF"), "Note": ["D/O"] * 6, "X": [5.0] * 6, "Y": [5.0] * 6})
+    before = len(ax.collections)
+    add_name_boxes(ax, df, MV)
+    assert len(ax.collections) - before >= 1
 
 
 def test_add_name_boxes_handles_nan_note(fig_ax):
@@ -76,38 +87,7 @@ def test_add_name_boxes_handles_nan_note(fig_ax):
     assert any(t.get_text().strip() == "Solo" for t in ax.texts)
 
 
-# --- declutter ---
-
-
-def test_declutter_separates_identical_points():
-    # Three people on the exact same spot must end up non-overlapping.
-    centers = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]])
-    sizes = np.array([[8.0, 1.0], [8.0, 1.0], [8.0, 1.0]])
-    out = _declutter(centers, sizes, MV)
-    for i in range(len(out)):
-        for j in range(i + 1, len(out)):
-            dx = abs(out[i, 0] - out[j, 0])
-            dy = abs(out[i, 1] - out[j, 1])
-            # Separated on at least one axis beyond the box half-extents.
-            assert dx >= (sizes[i, 0] + sizes[j, 0]) / 2 - 1e-6 or dy >= (sizes[i, 1] + sizes[j, 1]) / 2 - 1e-6
-
-
-def test_declutter_is_deterministic():
-    centers = np.array([[1.0, 1.0], [1.0, 1.0], [-3.0, 2.0]])
-    sizes = np.array([[9.0, 1.0], [9.0, 1.0], [9.0, 1.0]])
-    a = _declutter(centers, sizes, MV)
-    b = _declutter(centers, sizes, MV)
-    assert np.array_equal(a, b)
-
-
-def test_declutter_leaves_distant_points_untouched():
-    centers = np.array([[15.0, 15.0], [-15.0, -15.0]])
-    sizes = np.array([[8.0, 1.0], [8.0, 1.0]])
-    out = _declutter(centers, sizes, MV)
-    assert np.allclose(out, centers)
-
-
-# --- clustering ---
+# --- clustering + conflict (text-aware: cards may overlap as long as text is clear) ---
 
 
 def test_clusters_groups_overlapping_separates_distant():
@@ -117,32 +97,6 @@ def test_clusters_groups_overlapping_separates_distant():
     assert sizes_of_groups == [1, 2]  # two coincident together, the far one alone
 
 
-def test_declutter_separates_horizontally():
-    # Boxes overlapping more vertically than horizontally separate along x.
-    centers = np.array([[0.0, 0.0], [8.5, 0.0]])
-    sizes = np.array([[9.0, 1.0], [9.0, 1.0]])
-    out = _declutter(centers, sizes, MV)
-    assert abs(out[0, 0] - out[1, 0]) >= 9.0  # cleared on the x-axis
-
-
-def test_declutter_leaves_no_visual_overlap():
-    # A pile of overlapping boxes must end up with no two boxes visually
-    # overlapping (accounting for each box's rounded padding on every side).
-    centers = np.array([[0.0, 0.0]] * 6)
-    sizes = np.array([[9.0, 1.0]] * 6)
-    out = _declutter(centers, sizes, MV)
-    for i in range(len(out)):
-        for j in range(i + 1, len(out)):
-            dx, dy = abs(out[i, 0] - out[j, 0]), abs(out[i, 1] - out[j, 1])
-            need_x = (sizes[i, 0] + sizes[j, 0]) / 2 + 2 * _BOX_PAD + _BOX_GAP
-            need_y = (sizes[i, 1] + sizes[j, 1]) / 2 + 2 * _BOX_PAD + _BOX_GAP
-            # Cleared (visual extents disjoint) on at least one axis.
-            assert dx >= need_x - 1e-9 or dy >= need_y - 1e-9
-
-
-# --- text-aware collision: cards may overlap as long as the text stays clear ---
-
-
 def test_clusters_text_aware_ignores_box_only_overlap():
     # 8-wide boxes overlap at dx=6.5, but the real 4-wide texts are clear apart.
     anchors = np.array([[0.0, 0.0], [6.5, 0.0]])
@@ -150,25 +104,24 @@ def test_clusters_text_aware_ignores_box_only_overlap():
     text = np.array([[4.0, 1.0], [4.0, 1.0]])
     # Default rule clusters them (padded boxes touch)...
     assert sorted(len(g) for g in _clusters(anchors, fat)) == [2]
-    # ...text-aware leaves them as separate singletons (no callout).
+    # ...text-aware leaves them as separate singletons.
     assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [1, 1]
 
 
 def test_clusters_text_aware_still_groups_real_text_overlap():
-    # Close enough that the texts themselves overlap -> still one callout group.
     anchors = np.array([[0.0, 0.0], [3.0, 0.0]])
     fat = np.array([[8.0, 1.0], [8.0, 1.0]])
     text = np.array([[4.0, 1.0], [4.0, 1.0]])
     assert sorted(len(g) for g in _clusters(anchors, fat, text_sizes=text)) == [2]
 
 
-def test_declutter_text_aware_leaves_box_only_overlap_untouched():
-    # The box-overlap-but-text-clear pair must not be pushed apart.
-    centers = np.array([[0.0, 0.0], [6.5, 0.0]])
-    fat = np.array([[8.0, 1.0], [8.0, 1.0]])
+def test_conflict_uses_text_extents():
+    sizes = np.array([[8.0, 1.0], [8.0, 1.0]])
     text = np.array([[4.0, 1.0], [4.0, 1.0]])
-    out = _declutter(centers, fat, MV, text_sizes=text)
-    assert np.allclose(out, centers)
+    # Boxes overlap at dx=6.5 but the 4-wide texts are clear -> no conflict.
+    assert not _conflict(0, (0.0, 0.0), 1, (6.5, 0.0), sizes, text)
+    # Closer: the texts themselves overlap -> conflict.
+    assert _conflict(0, (0.0, 0.0), 1, (3.0, 0.0), sizes, text)
 
 
 def test_add_name_boxes_empty_df_is_noop(fig_ax):

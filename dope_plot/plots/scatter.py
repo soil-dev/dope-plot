@@ -17,8 +17,7 @@ _BOX_HEIGHT = 1.0
 _BOX_PAD = 0.3  # FancyBboxPatch round padding, in data units (expands the box each side)
 _BOX_GAP = 0.08  # minimum visual gap kept between boxes (a few px) so they never touch
 _CLUSTER_PAD = 2 * _BOX_PAD + _BOX_GAP  # reserve each box's padding on both sides + the gap
-_CALLOUT_OFFSET = 6.0  # how far a colliding group's stack is moved off its point
-_CALLOUT_BOX_GAP = _BOX_HEIGHT + _CLUSTER_PAD  # center-to-center spacing of stacked callout boxes
+_LEADER_MIN = 2.5  # only mark a moved card (dot + leader line) when pushed this far; smaller nudges read as on-point
 _GRADIENT_BAND = 0.12  # half-width of the soft transition between the two fill colours
 
 _BIRD_NAME = {"D": "Dove", "E": "Eagle", "O": "Owl", "P": "Peacock"}
@@ -156,46 +155,6 @@ def _text_data_extent(ax: Axes, s: str, fontsize: int, fallback: tuple) -> tuple
         return fallback
 
 
-def _declutter(
-    centers: np.ndarray, sizes: np.ndarray, max_value: float, iters: int = 400, text_sizes: np.ndarray | None = None
-) -> np.ndarray:
-    """Push conflicting label boxes apart, deterministically.
-
-    Each conflicting pair (see :func:`_pair_thresholds`) is separated along its
-    axis of least penetration. Boxes are wide and short, so this naturally stacks
-    coincident people vertically. Identical positions use an index-based tie-break
-    so the result is reproducible (no randomness).
-    """
-    pos = centers.astype(float).copy()
-    n = len(pos)
-    for _ in range(iters):
-        moved = False
-        for i in range(n):
-            for j in range(i + 1, n):
-                dx, dy = pos[i, 0] - pos[j, 0], pos[i, 1] - pos[j, 1]
-                tx, ty = _pair_thresholds(i, j, sizes, text_sizes)
-                overlap_x = tx - abs(dx)
-                overlap_y = ty - abs(dy)
-                if overlap_x > 0 and overlap_y > 0:
-                    if overlap_y <= overlap_x:
-                        shift = overlap_y / 2
-                        sgn = 1.0 if dy > 0 else (-1.0 if dy < 0 else (1.0 if i < j else -1.0))
-                        pos[i, 1] += sgn * shift
-                        pos[j, 1] -= sgn * shift
-                    else:
-                        shift = overlap_x / 2
-                        sgn = 1.0 if dx > 0 else (-1.0 if dx < 0 else (1.0 if i < j else -1.0))
-                        pos[i, 0] += sgn * shift
-                        pos[j, 0] -= sgn * shift
-                    moved = True
-        if not moved:
-            break
-    # Keep boxes fully inside the canvas.
-    pos[:, 0] = np.clip(pos[:, 0], -max_value + sizes[:, 0] / 2, max_value - sizes[:, 0] / 2)
-    pos[:, 1] = np.clip(pos[:, 1], -max_value + sizes[:, 1] / 2, max_value - sizes[:, 1] / 2)
-    return pos
-
-
 def _clusters(anchors: np.ndarray, sizes: np.ndarray, text_sizes: np.ndarray | None = None) -> list:
     """Group people whose labels conflict at their true points (connected components).
 
@@ -224,15 +183,80 @@ def _clusters(anchors: np.ndarray, sizes: np.ndarray, text_sizes: np.ndarray | N
     return list(groups.values())
 
 
-def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
-    """Draw name boxes, with callouts only where labels would obscure each other.
+def _conflict(i: int, pi, j: int, pj, sizes: np.ndarray, text_sizes: np.ndarray) -> bool:
+    """True when card i at ``pi`` and card j at ``pj`` overlap enough to cover text."""
+    tx, ty = _pair_thresholds(i, j, sizes, text_sizes)
+    return abs(pi[0] - pj[0]) < tx and abs(pi[1] - pj[1]) < ty
 
-    Each box starts on its person's true (X, Y). A label is moved only when another
-    opaque card would actually cover its text; cards are free to overlap as long as
-    every label stays legible. Where text genuinely collides, the whole group is
-    lifted aside (horizontally, toward the birds' side) and each person gets their
-    own dot at their true location, joined to their box by a thin dashed leader line
-    — so even identical profiles stay individually readable.
+
+def _free_vertical_slot(m, pos, sizes, text_sizes, anchors, bird_vecs, max_value):
+    """The smallest vertical nudge from ``anchors[m]`` (keeping its X) that clears
+    every other card's text — i.e. the nearest free slot above/below.
+
+    Returns ``(x, y)`` or None if nothing fits. Prefers the card's own vertical
+    bird-lean so the nudge reads naturally.
+    """
+    cx, cy = anchors[m]
+    half_h = sizes[m, 1] / 2
+    pref = 1.0 if bird_vecs[m][1] >= 0 else -1.0
+    d = 0.25
+    while d <= 2 * max_value:
+        for s in (pref, -pref):
+            y = cy + s * d
+            if not (-max_value + half_h <= y <= max_value - half_h):
+                continue
+            cand = (cx, y)
+            if all(k == m or not _conflict(m, cand, k, pos[k], sizes, text_sizes) for k in range(len(pos))):
+                return cand
+        d += 0.25
+    return None
+
+
+def _resolve_group(group, pos, sizes, text_sizes, anchors, bird_vecs, max_value) -> list:
+    """Resolve text overlaps inside one cluster by moving as few cards as possible.
+
+    While two members' text still overlaps, the cheaper card to relocate is nudged
+    to a free vertical slot and the other keeps its true point. Returns the indices
+    that ended up moved (each gets a dot + leader line).
+    """
+    moved = []
+    for _ in range(4 * len(group) + 6):
+        pair = next(
+            (
+                (i, j)
+                for a, i in enumerate(group)
+                for j in group[a + 1 :]
+                if _conflict(i, pos[i], j, pos[j], sizes, text_sizes)
+            ),
+            None,
+        )
+        if pair is None:
+            break
+        i, j = pair
+        ci = _free_vertical_slot(i, pos, sizes, text_sizes, anchors, bird_vecs, max_value)
+        cj = _free_vertical_slot(j, pos, sizes, text_sizes, anchors, bird_vecs, max_value)
+        di = abs(ci[1] - anchors[i, 1]) if ci is not None else float("inf")
+        dj = abs(cj[1] - anchors[j, 1]) if cj is not None else float("inf")
+        if ci is None and cj is None:
+            break  # nowhere to put either; leave them rather than loop forever
+        if dj < di:
+            pos[j] = cj
+            moved.append(j)
+        else:
+            pos[i] = ci
+            moved.append(i)
+    return moved
+
+
+def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
+    """Draw name boxes, nudging a label aside only when its text would be covered.
+
+    Each box starts on its person's true (X, Y) and stays there unless another
+    opaque card would cover its text. To resolve such an overlap only one card is
+    moved — the other keeps its point — nudged the minimum distance to a free
+    vertical slot nearby. A small nudge is left unmarked (it still reads as on its
+    point); only a card pushed well off its point gets a dot there plus a dashed
+    leader line. Cards may overlap freely as long as every label stays legible.
     """
     texts = [_box_text(row) for _, row in df.iterrows()]
     if not texts:
@@ -248,55 +272,23 @@ def add_name_boxes(ax: Axes, df: pd.DataFrame, max_value: float) -> None:
     )
     anchors = df[["X", "Y"]].to_numpy(dtype=float)
 
-    # Singletons rest on their point; clustered boxes get repositioned below.
-    pos = _declutter(anchors.copy(), sizes, max_value, text_sizes=text_sizes)
-
-    # For each overlapping group, lift the whole stack along its bird direction
-    # to make room for a dot per person at their true location.
-    clusters = []  # member-index lists for groups whose text actually collides
+    # Everyone starts on their true point; within each cluster of cards whose text
+    # would collide, move as few cards as possible to a free vertical slot nearby.
+    pos = anchors.copy()
+    moved = set()
     for group in _clusters(anchors, sizes, text_sizes=text_sizes):
-        if len(group) < 2:
+        if len(group) >= 2:
+            moved.update(_resolve_group(group, pos, sizes, text_sizes, anchors, bird_vecs, max_value))
+
+    # A card pushed well off its point gets a dot there + a dashed vertical leader
+    # line back to it. A card only nudged a little is left unmarked — it still reads
+    # as on its point, and a tiny dot-and-stub by the box edge looks worse than none.
+    for i in moved:
+        if abs(pos[i][1] - anchors[i][1]) < _LEADER_MIN:
             continue
-        members = sorted(group, key=lambda i: anchors[i, 1], reverse=True)
-        n = len(members)
-        cx, cy = anchors[group].mean(axis=0)
-        half_w = sizes[group][:, 0].max() / 2
-        half_h = (n - 1) / 2 * _CALLOUT_BOX_GAP + _BOX_HEIGHT / 2
-
-        # Offset the stack HORIZONTALLY toward the side the birds lean (Dove/Owl
-        # -> right, Peacock/Eagle -> left); if that side has no room, use the
-        # other. A purely horizontal move keeps the dots beside the stack, so the
-        # leader lines stay clear of the sibling boxes.
-        bird = np.sum([bird_vecs[i] for i in group], axis=0)
-        side = 1.0 if bird[0] >= 0 else -1.0
-        stack_y = np.clip(cy, -max_value + half_h, max_value - half_h)
-        center = np.array([cx, stack_y])
-        for sx in (side, -side):
-            x = np.clip(cx + sx * _CALLOUT_OFFSET, -max_value + half_w, max_value - half_w)
-            center = np.array([x, stack_y])
-            if abs(x - cx) >= half_w + 0.5:  # enough room to clear the dots
-                break
-
-        for rank, i in enumerate(members):
-            level = (n - 1) / 2 - rank
-            pos[i] = [center[0], center[1] + level * _CALLOUT_BOX_GAP]
-        clusters.append(group)
-
-    # A moved stack may now overlap a neighbour; declutter once more so
-    # everything is collision-free before we draw the leader lines.
-    if clusters:
-        pos = _declutter(pos, sizes, max_value, text_sizes=text_sizes)
-
-    # One dot per collided person at their TRUE (X, Y) — the whole point of the
-    # callout is to mark where the person actually is, then lead the eye to their
-    # moved box. The line targets the box centre; the opaque gradient box drawn on
-    # top hides the part of the line beneath it. (Identical profiles share a point,
-    # so their dots coincide and their leader lines simply converge there.)
-    for group in clusters:
-        for i in group:
-            dot_x, dot_y = anchors[i]
-            ax.plot([pos[i][0], dot_x], [pos[i][1], dot_y], color="black", linewidth=0.5, linestyle="--", zorder=2)
-            ax.scatter([dot_x], [dot_y], s=2, color="black", zorder=4)
+        dot_x, dot_y = anchors[i]
+        ax.plot([pos[i][0], dot_x], [pos[i][1], dot_y], color="black", linewidth=0.5, linestyle="--", zorder=2)
+        ax.scatter([dot_x], [dot_y], s=2, color="black", zorder=4)
 
     # Gradient-filled label boxes (imshow can disturb the axes aspect/limits, so
     # snapshot and restore them afterwards).
