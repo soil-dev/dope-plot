@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-ICONS_DIR = REPO_ROOT / "icons"
+ICONS_DIR = REPO_ROOT / "dope_plot" / "assets" / "icons"
 
 
 @pytest.fixture

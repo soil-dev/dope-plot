@@ -137,7 +137,7 @@ _MINIMAL_CONFIG = {
         "bottom_left": "lightcoral",
         "alpha": 0.2,
     },
-    "paths": {"icons_dir": "icons", "icon_set": "hunt", "output": "charts"},
+    "paths": {"icons_dir": "dope_plot/assets/icons", "icon_set": "hunt", "output": "charts"},
 }
 
 
