@@ -1,7 +1,7 @@
 [project]
 name = "dope-plot"
 version = "0.1.1"
-description = "A script to plot bird personality distribution"
+description = "Radar, quadrant and comparison charts for TICK four-bird personality profiles — CLI and MCP server"
 authors = [{ name = "Anton Arapov" }]
 license = "Apache-2.0"
 license-files = ["LICENSE"]

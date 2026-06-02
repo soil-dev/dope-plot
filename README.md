@@ -6,7 +6,26 @@
 - **Team** or **group** distributions in a quadrant layout
 - **Pairwise** comparisons (overlap of two individuals’ personalities)
 
+…either from the command line or straight from an AI assistant via the bundled
+[MCP server](#use-from-ai-assistants-mcp).
+
 These plots are especially useful for workshops, coaching sessions, and team-building exercises, as they visualize how individuals align or differ on the four “bird” dimensions.
+
+### The four birds
+
+Each person scores on four traits, and the scatter plot places them on a
+quadrant defined by two axes: **assertive ↔ reserved** (horizontal) and
+**people-oriented ↔ task-oriented** (vertical).
+
+| Bird | Quadrant | Style | Tends to be |
+| --- | --- | --- | --- |
+| **Dove** | top-right | Supportive & Caring | warm, people-oriented, reserved |
+| **Peacock** | top-left | Talkative & Dramatic | warm, people-oriented, assertive |
+| **Eagle** | bottom-left | Controlling & Forceful | task-oriented, assertive |
+| **Owl** | bottom-right | Analytical & Logical | task-oriented, reserved |
+
+Most people lead with one bird (their *primary*) and lean on a second
+(*secondary*); the charts show that blend rather than forcing a single label.
 
 [The Tick personality profiling system](https://tick.com.au) has been appreciated by many in the fields of sales training, leadership coaching, and personal development for its simplicity and ease of communication. Dope-Plot leverages this established framework to provide clear, accessible visualizations that help users understand and compare personality traits quickly. While the tool provides valuable insights and serves as a catalyst for discussion and reflection, users are encouraged to complement these insights with additional information and professional judgment.
 
@@ -48,7 +67,7 @@ These plots are especially useful for workshops, coaching sessions, and team-bui
 1. **Clone or Download the Repository**
 
 ```bash
-git clone https://github.com/arapov/dope-plot.git
+git clone https://github.com/soil-dev/dope-plot.git
 cd dope-plot
 ```
 
@@ -162,21 +181,21 @@ poetry run pytest
 - Plots one person’s scores around four axes (Eagle, Dove, Owl, Peacock).
 - The polygon edges connect each axis’s numeric value, visually representing personality strengths.
 
-<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/Grace/radar_Grace.png" width="555">
+<img src="https://media.githubusercontent.com/media/soil-dev/dope-plot/refs/heads/master/charts/Grace/radar_Grace.png" width="555">
 
 2. **Group/Team Distribution - Scatter Plot**
 
 - Displays multiple names on a quadrant chart.
 - Each quadrant corresponds to a “bird” style, with positions indicating how strongly each person aligns to one or more dimensions.
 
-<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/scatter_all.png" width="555">
+<img src="https://media.githubusercontent.com/media/soil-dev/dope-plot/refs/heads/master/charts/scatter_all.png" width="555">
 
 3. **Comparison/Overlap Plot**
 
 - Overlays two radar plots for a side-by-side comparison.
 - Shows an “Overlap” percentage as a measure of similarity.
 
-<img src="https://media.githubusercontent.com/media/arapov/dope-plot/refs/heads/master/charts/Grace/compare/with_Henry.png" width="555">
+<img src="https://media.githubusercontent.com/media/soil-dev/dope-plot/refs/heads/master/charts/Grace/compare/with_Henry.png" width="555">
 
 _(Note: The above images are illustrative examples.)_
 

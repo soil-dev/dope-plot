@@ -217,6 +217,6 @@ def add_date(ax: Axes, config: dict) -> None:
         else:
             lx, ly, lha, lva = 0.0, -0.1, "left", "top"
         ax.text(
-            lx, ly, "github.com/arapov/dope-plot",
+            lx, ly, "github.com/soil-dev/dope-plot",
             transform=ax.transAxes, ha=lha, va=lva, fontsize=fontsize, color="0.5",
         )

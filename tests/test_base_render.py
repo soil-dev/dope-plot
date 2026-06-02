@@ -90,7 +90,7 @@ def test_add_date_with_project_link(fig_ax, base_config):
     add_date(ax, base_config)
     # Project link + generated date == 2 texts.
     assert len(ax.texts) - before == 2
-    assert any("github.com/arapov/dope-plot" in t.get_text() for t in ax.texts)
+    assert any("github.com/soil-dev/dope-plot" in t.get_text() for t in ax.texts)
 
 
 def test_add_date_defaults_to_showing_link_when_key_missing(fig_ax, base_config):
@@ -111,7 +111,7 @@ def test_add_date_positions_beside_bird_boxes(fig_ax, base_config):
     add_date(ax, base_config)
     texts = " ".join(t.get_text() for t in ax.texts)
     assert "Generated:" in texts
-    assert "github.com/arapov/dope-plot" in texts
+    assert "github.com/soil-dev/dope-plot" in texts
 
 
 def _count_annotation_boxes(ax):
