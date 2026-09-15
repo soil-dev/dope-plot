@@ -21,8 +21,8 @@ classifiers = [
 ]
 dependencies = [
     "pandas (>=3.0.5,<4.0.0)",
-    "matplotlib (>=3.11.1,<4.0.0)",
-    "numpy (>=2.5.2,<3.0.0)",
+    "matplotlib (>=3.11.2,<4.0.0)",
+    "numpy (>=2.5.3,<3.0.0)",
     # matplotlib's image backend (pulled transitively); floored to the patched
     # release that fixes the 2026 Pillow CVEs (GHSA/CVE image-parsing issues).
     "pillow (>=12.3.0)",
@@ -34,7 +34,7 @@ dependencies = [
 # the successor of 1.x FastMCP); capped <3.0.0 against the next breaking major.
 # cryptography comes transitively via mcp's auth stack; floored to the release
 # that fixes GHSA-g6cj-pr64-35w5 (PKCS#7 Bleichenbacher oracle).
-mcp = ["mcp>=2.0.0,<3.0.0", "cryptography>=50.0.0"]
+mcp = ["mcp>=2.2.0,<3.0.0", "cryptography>=50.0.1"]
 
 [project.scripts]
 dope-plot = "dope_plot.cli:main"
@@ -58,7 +58,7 @@ include = [
 ]
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.16.3"
+ruff = "^0.16.7"
 pytest = "^9.1.1"
 
 [tool.ruff]
